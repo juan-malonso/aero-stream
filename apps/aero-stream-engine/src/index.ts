@@ -6,6 +6,7 @@ export interface AeroStreamEngineOptions {
 export class AeroStreamEngine {
   private url: string;
   private secret: string;
+  public ws: WebSocket | null = null;
 
   constructor({ url, secret }: AeroStreamEngineOptions) {
     this.url = url;
@@ -17,16 +18,38 @@ export class AeroStreamEngine {
       `[aero-stream-engine] Conectando a Aero-Stream Tower en: ${this.url}`
     );
 
-    try {
-      // Lógica de comunicación real para validar el servicio o autenticarse con Tower.
-      // const response = await fetch(`${this.url}/health`, {
-      //   headers: { 'Authorization': `Bearer ${this.secret}` }
-      // });
-      // if (!response.ok) throw new Error('Credenciales incorrectas o servicio inalcanzable.');
-      return true;
-    } catch (error) {
-      console.error('[aero-stream-engine] Fallo al conectar con Tower:', error);
-      throw error;
-    }
+    return new Promise((resolve, reject) => {
+      try {
+        const wsUrl = new URL(this.url);
+        // Aseguramos que se utiliza el protocolo WebSocket
+        if (wsUrl.protocol === 'http:') wsUrl.protocol = 'ws:';
+        if (wsUrl.protocol === 'https:') wsUrl.protocol = 'wss:';
+
+        // Pasamos el secreto como parámetro para la autenticación
+        wsUrl.searchParams.append('token', this.secret);
+
+        this.ws = new WebSocket(wsUrl.toString());
+
+        this.ws.addEventListener('open', () => {
+          console.log('[aero-stream-engine] WebSocket conectado exitosamente.');
+          resolve(true);
+        });
+
+        this.ws.addEventListener('error', (error) => {
+          console.error('[aero-stream-engine] Error en el WebSocket:', error);
+          reject(error);
+        });
+
+        this.ws.addEventListener('close', () => {
+          console.log('[aero-stream-engine] Conexión WebSocket cerrada.');
+        });
+      } catch (error) {
+        console.error(
+          '[aero-stream-engine] Fallo al inicializar el WebSocket:',
+          error
+        );
+        reject(error);
+      }
+    });
   }
 }
