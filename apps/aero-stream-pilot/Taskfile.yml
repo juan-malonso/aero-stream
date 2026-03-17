@@ -1,0 +1,45 @@
+version: '3'
+
+includes:
+  engine-task:
+    taskfile: ../aero-stream-engine
+    dir: ../aero-stream-engine
+
+tasks:
+  install:
+    desc: 'Install dependencies.'
+    cmds:
+      - yarn install
+
+  build:
+    desc: 'Build the worker for production.'
+    deps:
+      - engine-task:pack
+      - install
+    cmds:
+      - yarn wrangler deploy --dry-run --outdir=dist
+
+  start:
+    desc: 'Run the built worker locally.'
+    deps:
+      - build
+    cmds:
+      - yarn wrangler dev src/index.js --local
+
+  dev:
+    desc: 'Run the worker in development mode with hot-reloading.'
+    deps:
+      - build
+    cmds:
+      - yarn wrangler dev src/index.js
+
+  deploy:
+    desc: 'Deploy the worker to Cloudflare.'
+    cmds:
+      - yarn wrangler deploy
+
+  test:
+    desc: 'Run tests for the worker.'
+    cmds:
+      - echo "Not implemented"
+    silent: true

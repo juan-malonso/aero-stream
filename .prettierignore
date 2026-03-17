@@ -1,0 +1,17 @@
+# Node modules
+node_modules/
+
+# Wrangler specific
+.wrangler/
+wrangler.toml
+
+# Build output
+dist/
+build/
+
+# Cache directories
+.turbo/
+.cache/
+
+# Log files
+*.log

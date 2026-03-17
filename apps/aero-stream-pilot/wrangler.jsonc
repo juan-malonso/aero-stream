@@ -1,0 +1,10 @@
+{
+  "$schema": "https://raw.githubusercontent.com/cloudflare/wrangler/main/config-schema.json",
+  "compatibility_date": "2026-03-16",
+  "main": "src/index.ts",
+  "name": "aero-stream-pilot",
+  "vars": {
+    "BACKEND_HOST_PORT": "backend.example.com:8080",
+    "SECRET_PSK": "A_VERY_SECRET_KEY_CHANGE_ME",
+  },
+}

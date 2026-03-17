@@ -1,0 +1,31 @@
+version: '3'
+
+tasks:
+  install:
+    desc: 'Instalar dependencias'
+    cmds:
+      - yarn install
+
+  build:
+    desc: 'Compila el código TypeScript del motor'
+    cmds:
+      - yarn build
+    sources:
+      - src/**/*.ts
+      - tsconfig.json
+    generates:
+      - dist/**/*.js
+
+  pack:
+    desc: 'Genera el empaquetado del proyecto (tarball)'
+    deps:
+      - build
+    cmds:
+      - yarn pack
+
+  dev:
+    desc: 'Ejecuta el motor en modo desarrollo (watch)'
+    deps:
+      - build
+    cmds:
+      - yarn build --watch

@@ -1,0 +1,13 @@
+{
+  "recommendations": [
+    // Linter and Formatter
+    "dbaeumer.vscode-eslint",
+    "esbenp.prettier-vscode",
+    // Mermaid diagram support for documentation
+    "bierner.markdown-mermaid",
+    // General git utilities
+    "eamodio.gitlens",
+    // Helps with .env files
+    "mikestead.dotenv"
+  ]
+}

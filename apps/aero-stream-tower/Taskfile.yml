@@ -1,0 +1,43 @@
+version: '3'
+
+vars:
+  SERVICE_NAME: aero-stream-tower
+
+tasks:
+  install:
+    desc: 'Install dependencies.'
+    cmds:
+      - yarn install
+
+  build:
+    desc: 'Build the worker for production.'
+    deps:
+      - install
+    cmds:
+      - yarn deploy --dry-run --outdir=dist # Use deploy's build mechanism
+
+  start:
+    desc: 'Run the built worker locally.'
+    deps:
+      - build
+    cmds:
+      - yarn wrangler dev src/index.ts --local
+
+  dev:
+    desc: 'Run the worker in development mode with hot-reloading.'
+    deps:
+      - build
+    cmds:
+      - yarn wrangler dev src/index.ts
+
+  deploy:
+    desc: 'Deploy the worker to Cloudflare.'
+    cmds:
+      - yarn wrangler deploy
+
+  test:
+    desc: 'Run tests for the worker.'
+    cmds:
+      - echo "Test task for {{.SERVICE_NAME}} not implemented yet."
+      - yarn test --run # Assumes vitest or similar test runner
+    silent: true

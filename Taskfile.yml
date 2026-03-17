@@ -1,0 +1,30 @@
+version: '3'
+
+includes:
+  pilot-task:
+    taskfile: ./apps/aero-stream-pilot
+    dir: ./apps/aero-stream-pilot
+  tower-task:
+    taskfile: ./apps/aero-stream-tower
+    dir: ./apps/aero-stream-tower
+  engine-task:
+    taskfile: ./apps/aero-stream-engine
+    dir: ./apps/aero-stream-engine
+
+tasks:
+  default:
+    desc: 'Show available tasks.'
+    cmds:
+      - task --list-all
+
+  engine:pack:
+    cmds:
+      - task: engine-task:pack
+
+  pilot:dev:
+    cmds:
+      - task: pilot-task:dev
+
+  tower:dev:
+    cmds:
+      - task: tower-task:dev
