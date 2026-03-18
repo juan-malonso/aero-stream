@@ -2,14 +2,17 @@
   "name": "aero-stream-tower",
   "type": "module",
   "scripts": {
-    "dev": "wrangler dev",
+    "dev": "wrangler dev src/index.ts",
     "deploy": "wrangler deploy --minify",
     "cf-typegen": "wrangler types --env-interface CloudflareBindings"
   },
   "dependencies": {
-    "hono": "4.12.8"
+    "hono": "4.12.8",
+    "tweetnacl": "^1.0.3",
+    "uuid": "^9.0.1"
   },
   "devDependencies": {
+    "@types/uuid": "^9.0.8",
     "wrangler": "4.4.0"
   }
 }

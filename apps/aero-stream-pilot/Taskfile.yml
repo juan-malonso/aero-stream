@@ -1,45 +1,31 @@
 version: '3'
 
-includes:
-  engine-task:
-    taskfile: ../aero-stream-engine
-    dir: ../aero-stream-engine
-
 tasks:
   install:
-    desc: 'Install dependencies.'
+    desc: 'Instalar dependencias'
     cmds:
       - yarn install
 
   build:
-    desc: 'Build the worker for production.'
-    deps:
-      - engine-task:pack
-      - install
+    desc: 'Compila el código TypeScript del motor'
     cmds:
-      - yarn wrangler deploy --dry-run --outdir=dist
+      - yarn build
+    sources:
+      - src/**/*.ts
+      - tsconfig.json
+    generates:
+      - dist/**/*.js
 
-  start:
-    desc: 'Run the built worker locally.'
+  pack:
+    desc: 'Genera el empaquetado del proyecto (tarball)'
     deps:
       - build
     cmds:
-      - yarn wrangler dev src/index.js --local
+      - yarn pack
 
   dev:
-    desc: 'Run the worker in development mode with hot-reloading.'
+    desc: 'Ejecuta el motor en modo desarrollo (watch)'
     deps:
       - build
     cmds:
-      - yarn wrangler dev src/index.js
-
-  deploy:
-    desc: 'Deploy the worker to Cloudflare.'
-    cmds:
-      - yarn wrangler deploy
-
-  test:
-    desc: 'Run tests for the worker.'
-    cmds:
-      - echo "Not implemented"
-    silent: true
+      - yarn build --watch

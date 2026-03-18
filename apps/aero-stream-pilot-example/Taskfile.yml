@@ -1,7 +1,9 @@
 version: '3'
 
-vars:
-  SERVICE_NAME: aero-stream-tower
+includes:
+  pilot-task:
+    taskfile: ../aero-stream-pilot
+    dir: ../aero-stream-pilot
 
 tasks:
   install:
@@ -12,32 +14,32 @@ tasks:
   build:
     desc: 'Build the worker for production.'
     deps:
+      - pilot-task:pack
       - install
     cmds:
-      - yarn deploy --dry-run --outdir=dist # Use deploy's build mechanism
+      - yarn build
 
   start:
     desc: 'Run the built worker locally.'
     deps:
       - build
     cmds:
-      - yarn wrangler dev {{.TASKFILE_DIR}}/src/index.ts --local
+      - yarn start
 
   dev:
     desc: 'Run the worker in development mode with hot-reloading.'
     deps:
-      - build
+      - pilot-task:pack
     cmds:
-      - yarn wrangler dev {{.TASKFILE_DIR}}/src/index.ts --port 8787
+      - yarn dev
 
   deploy:
     desc: 'Deploy the worker to Cloudflare.'
     cmds:
-      - yarn wrangler deploy
+      - echo "Deploy para Next.js no configurado. Utilizar Vercel o similar."
 
   test:
     desc: 'Run tests for the worker.'
     cmds:
-      - echo "Test task for {{.SERVICE_NAME}} not implemented yet."
-      - yarn test --run # Assumes vitest or similar test runner
+      - echo "Not implemented"
     silent: true

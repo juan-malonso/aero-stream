@@ -1,11 +1,15 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
-    "lib": ["esnext", "dom"],
+    "target": "ES2022",
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "declaration": true,
+    "outDir": "./dist",
+    "rootDir": "./src",
     "strict": true,
+    "esModuleInterop": true,
     "skipLibCheck": true,
-    "types": ["@cloudflare/workers-types/2023-07-01"]
-  }
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["src/**/*"]
 }

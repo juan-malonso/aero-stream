@@ -7,9 +7,9 @@ includes:
   tower-task:
     taskfile: ./apps/aero-stream-tower
     dir: ./apps/aero-stream-tower
-  engine-task:
-    taskfile: ./apps/aero-stream-engine
-    dir: ./apps/aero-stream-engine
+  pilot-example:
+    taskfile: ./apps/aero-stream-pilot-example
+    dir: ./apps/aero-stream-pilot-example
 
 tasks:
   default:
@@ -17,13 +17,13 @@ tasks:
     cmds:
       - task --list-all
 
-  engine:pack:
+  pilot:pack:
     cmds:
-      - task: engine-task:pack
+      - task: pilot-task:pack
 
   pilot:dev:
     cmds:
-      - task: pilot-task:dev
+      - task: pilot-example:dev
 
   tower:dev:
     cmds:
