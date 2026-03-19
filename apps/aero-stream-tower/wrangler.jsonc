@@ -3,8 +3,7 @@
   "main": "src/index.ts",
   "compatibility_date": "2025-03-20",
   "vars": {
-    "ALLOWED_ORIGINS": "http://localhost:3000,https://app.example.com",
-  },
+  }
   // "compatibility_flags": [
   //   "nodejs_compat"
   // ],

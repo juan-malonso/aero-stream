@@ -54,18 +54,23 @@ export class AeroStreamPipe {
     }
 
     private _onOpen(secret: string) {
-        const nonce = new Uint8Array(24);
+        const nonce = nacl.randomBytes(nacl.secretbox.nonceLength);
         const secretKey = new Uint8Array(32);
         secretKey.set(new TextEncoder().encode(secret).slice(0, 32));
 
-        const message = JSON.stringify({ publicKey: Array.from(this.pilotKey.publicKey) });
+        const message = JSON.stringify({ pilotKey: Array.from(this.pilotKey.publicKey) });
         const encrypted = nacl.secretbox(
             new TextEncoder().encode(message), 
             nonce, 
             secretKey
         );
 
-        const payload = JSON.stringify({ payload: Array.from(encrypted), ticket: secret })
+        const payload = JSON.stringify({ 
+            type: 'HANDSHAKE',
+            payload: Array.from(encrypted), 
+            nonce: Array.from(nonce),
+            token: secret 
+        });
 
         this.ws?.send(payload);
         this.logger.info('Performed handshake step 1');
@@ -77,12 +82,12 @@ export class AeroStreamPipe {
                 this.handler(decrypt(data, this.towerKey, this.pilotKey.secretKey));
             } else {
                 const parsed = JSON.parse(data);
-                if (parsed.key) {
-                    this.towerKey = new Uint8Array(parsed.key);
+                if (parsed.towerKey) {
+                    this.towerKey = new Uint8Array(parsed.towerKey);
                 }
                 const message = decrypt(data, this.towerKey, this.pilotKey.secretKey);
                 this.isConnected = true;
-                this.handler({ sessionId: message.id })
+                this.handler({ sessionId: message.sessionId })
             }
             resolve(true);
         } catch(error) {

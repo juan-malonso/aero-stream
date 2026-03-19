@@ -1,6 +1,6 @@
 export const metadata = {
   title: 'AeroStream Pilot Frontend',
-  description: 'Conectando con Aero-Stream Tower vía WebSocket',
+  description: 'Connecting to Aero-Stream Tower via WebSocket',
 };
 
 export default function RootLayout({
@@ -9,7 +9,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="es">
+    <html lang="en">
       <body>{children}</body>
     </html>
   );
