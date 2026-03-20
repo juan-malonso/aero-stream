@@ -29,7 +29,7 @@ tasks:
   dev:
     desc: 'Run the worker in development mode with hot-reloading.'
     deps:
-      - pilot-task:pack
+      - build
     cmds:
       - yarn dev
 

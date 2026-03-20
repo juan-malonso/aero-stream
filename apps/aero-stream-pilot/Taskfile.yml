@@ -19,6 +19,7 @@ tasks:
   pack:
     desc: 'Genera el empaquetado del proyecto (tarball)'
     deps:
+      - install
       - build
     cmds:
       - yarn pack

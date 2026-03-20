@@ -2,41 +2,39 @@ import { Logger } from '../utils/logger.js';
 import { AeroStreamPipe } from './pipe/pipe.js';
 
 export interface AeroStreamPilotOptions {
-  url: string;
+    url: string;
+    secret: string;
+    onMessage?: (message: any) => void;
+    onClose?: () => void;
 }
 
 export class AeroStreamPilot {
-    private logger = new Logger(AeroStreamPilot.name);
-
     private pipe: AeroStreamPipe;
-
-    public sessionId: string | null = null;
     
-    constructor({ url }: AeroStreamPilotOptions) {
+    constructor({ 
+        url, 
+        secret, 
+        onMessage = () => {}, 
+        onClose = () => {},
+    }: AeroStreamPilotOptions) {
         this.pipe = new AeroStreamPipe({
             url,
-            onMessage: this.handleMessage.bind(this),
+            secret,
+            onMessage,
+            onClose,
         });
     }
 
-    async connect(secret: string): Promise<boolean> {
-        return this.pipe.connect(secret);
+    async connect(): Promise<boolean> {
+        return this.pipe.connect();
     }
 
-    private handleMessage(message: any) {
-        this.logger.debug('Received message:', message);
+    public sendMessage(data: object) {
+        this.pipe.send(data);
     }
 
-    public sendMessage(message: any) {
-        this.pipe.send(message);
-    }
-
-    disconnect() {
+    public disconnect() {
         this.pipe.close();
-    }
-    
-    public get ws() {
-        return this.pipe.ws;
     }
 
     public get isConnected(): boolean {

@@ -10,7 +10,7 @@ export default function Home() {
   const [status, setStatus] = useState('Disconnected');
   const [logs, setLogs] = useState<string[]>([]);
   const [sessionToken, setSessionToken] = useState<string | null>(null);
-  const pilotRef = useRef<any>(null);
+  const pilotRef = useRef<AeroStreamPilot | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -23,21 +23,25 @@ export default function Home() {
   const handleConnect = async () => {
     try {
       setStatus('Connecting...');
-
-      const pilot = new AeroStreamPilot({ url: socketUrl });
-      pilotRef.current = pilot;
+      const pilot = new AeroStreamPilot({ 
+        url: socketUrl, 
+        secret: token,
+        onMessage: (message: any) => {
+          addLog(`Received message: ${JSON.stringify(message)}`);
+        },
+        onClose: () => {
+          handleDisconnect();
+          addLog('WebSocket connection closed by the server.');
+        },
+      });
 
       addLog('Connecting to server...');
-      await pilot.connect(token);
+      pilotRef.current = pilot;
+      await pilot.connect();
 
       if (pilot.isConnected) {
         setStatus('Connected');
         addLog(`Connection successful.`);
-
-        pilot.ws?.addEventListener('close', () => {
-          handleDisconnect();
-          addLog('WebSocket connection closed by the server.');
-        });
       }
     } catch (error: any) {
       setStatus('Connection Error');
@@ -49,17 +53,16 @@ export default function Home() {
     if (intervalRef.current) clearInterval(intervalRef.current);
     if (pilotRef.current) {
       if (typeof pilotRef.current.disconnect === 'function') pilotRef.current.disconnect();
-      else if (typeof pilotRef.current.close === 'function') pilotRef.current.close();
       addLog('Closing connection locally...');
     }
     setStatus('Disconnected');
   };
 
   const handleHandshake = () => {
-    if (pilotRef.current && pilotRef.current.ws) {
+    if (pilotRef.current) {
       addLog('Sending handshake...');
-      // El servidor espera que el primer mensaje valide la conexión.
-      pilotRef.current.ws.send(JSON.stringify({ type: 'HANDSHAKE', token: sessionToken }));
+      // The server expects the first message to validate the connection.
+      pilotRef.current.sendMessage({ type: 'TESTING', token: sessionToken });
     } else {
       addLog('Cannot send handshake: Not connected.');
     }

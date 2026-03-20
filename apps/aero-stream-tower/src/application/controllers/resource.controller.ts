@@ -1,5 +1,8 @@
-import { Context } from 'hono';
-import { GeneratePresignedUrlUseCase, StoragePort } from '@/domain';
+import { 
+  Context, 
+  GeneratePresignedUrlUseCase, 
+  StoragePort
+} from '@/domain';
 
 export class ResourceController {
   constructor(

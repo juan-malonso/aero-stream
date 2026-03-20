@@ -1,8 +1,8 @@
-import { Hono, Context } from 'hono';
+import { Hono } from 'hono';
 import { upgradeWebSocket } from 'hono/cloudflare-workers';
 
 import { ResourceController, SyncController } from './application';
-import { GeneratePresignedUrlUseCase } from './domain';
+import { GeneratePresignedUrlUseCase, Context } from './domain';
 import { R2StorageAdapter, InMemorySecurityAdapter } from './infrastructure';
 import { ORIGINS } from './constants';
 

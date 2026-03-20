@@ -1,45 +1,20 @@
+import { Events, Payload } from '../models';
 import { VideoService } from '../services';
-
-export interface VideoStartMessage {
-  type: 'VIDEO_START';
-  fileName: string;
-  mimeType: string;
-}
-
-export interface VideoEndMessage {
-  type: 'VIDEO_END';
-}
-
-export interface FlightSyncMessage {
-  type: 'FLIGHT_SYNC';
-  payload: any;
-}
-
-export interface TelemetryMessage {
-  type: 'TELEMETRY';
-  payload?: any;
-}
-
-export type WebSocketStringMessage = VideoStartMessage | VideoEndMessage | FlightSyncMessage | TelemetryMessage;
 
 export class WebSocketDispatcherUseCase {
   constructor(private readonly videoService: VideoService) {}
 
-  async dispatch(event: MessageEvent, ws: WebSocket): Promise<void> {
+  async dispatch(event: Payload<Events>, ws: WebSocket): Promise<void> {
     try {
-      if (typeof event.data === 'string') {
-        const message = JSON.parse(event.data) as WebSocketStringMessage;
-        await this.handleJsonMessage(message, ws);
-      } else if (event.data instanceof ArrayBuffer) {
-        await this.handleBinaryMessage(event.data, ws);
-      }
+      await this.handleMessage(event, ws);
+
     } catch (error) {
       console.error('Dispatcher error:', error);
       ws.send(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }));
     }
   }
 
-  private async handleJsonMessage(message: WebSocketStringMessage, ws: WebSocket) {
+  private async handleMessage(message: Payload<Events>, ws: WebSocket) {
     switch (message.type) {
       case 'VIDEO_START':
         const uploadId = await this.videoService.startUpload(message.fileName, message.mimeType);
@@ -63,8 +38,8 @@ export class WebSocketDispatcherUseCase {
   }
 
   private async handleBinaryMessage(data: ArrayBuffer, ws: WebSocket) {
-    // Si planeas recibir otros streams binarios (ej. audio), deberías usar el primer
-    // byte de 'data' como un "opcode" para saber a qué servicio despachar el ArrayBuffer.
+    // If you plan to receive other binary streams (e.g., audio), you should use the first
+    // byte of 'data' as an "opcode" to know which service to dispatch the ArrayBuffer to.
     if (this.videoService.isUploading) {
       const dataView = new DataView(data);
       const partNumber = dataView.getUint32(0, true);
