@@ -4,21 +4,19 @@ import { AeroStreamPilot } from '../src/index';
 describe('AeroStreamPilot', () => {
   let pilot: AeroStreamPilot;
   const mockUrl = 'ws://localhost:8787';
+  const mockSecret = 'super-secret-key';
+  const mockWorkflowId = 'workflow-123';
 
   beforeEach(() => {
-    pilot = new AeroStreamPilot({ url: mockUrl });
+    pilot = new AeroStreamPilot({ 
+        url: mockUrl, 
+        secret: mockSecret, 
+        workflowId: mockWorkflowId 
+    });
   });
 
   it('should initialize with isConnected as false', () => {
     expect(pilot.isConnected).toBe(false);
-  });
-
-  it('should have a null sessionId on initialization', () => {
-    expect(pilot.getSessionId()).toBe(null);
-  });
-
-  it('should have a null ws connection on initialization', () => {
-    expect(pilot.ws).toBe(null);
   });
 
   it('should set isConnected to false when disconnect is called', () => {

@@ -1,17 +1,15 @@
-// apps/aero-stream-pilot/src/core/video/video.ts
+import type { AeroStreamPipe } from "../pipe/pipe.js";
 
-import { AeroStreamPipe } from "../pipe/pipe.js";
-
-type EventListener = (...args: any[]) => void;
+type EventListener = (...args: unknown[]) => void;
 
 export class AeroStreamVideo {
-    private events: { [key: string]: EventListener[] } = {};
+    private events: Record<string, EventListener[] | undefined> = {};
     private mediaStream: MediaStream | null = null;
     private mediaRecorder: MediaRecorder | null = null;
-    private chunkCounter: number = 1;
+    private chunkCounter = 1;
 
     constructor(pipe: AeroStreamPipe) {
-        this.on('data', (data: Blob) => {
+        this.on('data', (data: unknown) => {
             const reader = new FileReader();
             reader.onload = () => {
                 // Create a new buffer: 4 bytes for the ID + video chunk size
@@ -44,33 +42,30 @@ export class AeroStreamVideo {
                 }
             };
 
-            // CRITICAL: Changed from readAsDataURL to readAsArrayBuffer
-            reader.readAsArrayBuffer(data);
+            reader.readAsArrayBuffer(data as Blob);
         });
     }
 
     on(event: string, listener: EventListener) {
-        if (!this.events[event]) {
-            this.events[event] = [];
-        }
+        this.events[event] ??= [];
         this.events[event].push(listener);
     }
 
     off(event: string, listener: EventListener) {
-        if (!this.events[event]) {
+        if (this.events[event] === undefined) {
             return;
         }
         this.events[event] = this.events[event].filter(l => l !== listener);
     }
 
-    private emit(event: string, ...args: any[]) {
-        if (!this.events[event]) {
+    private emit(event: string, ...args: unknown[]) {
+        if (this.events[event] === undefined) {
             return;
         }
-        this.events[event].forEach(listener => listener(...args));
+        this.events[event].forEach(listener => { listener(...args); });
     }
 
-    async start(mediaStream: MediaStream) {
+    start(mediaStream: MediaStream) {
         try {
             this.chunkCounter = 1;
             this.mediaStream = mediaStream;
@@ -94,7 +89,7 @@ export class AeroStreamVideo {
             this.mediaRecorder.stop();
         }
         if (this.mediaStream) {
-            this.mediaStream.getTracks().forEach(track => track.stop());
+            this.mediaStream.getTracks().forEach(track => { track.stop(); });
         }
         this.mediaStream = null;
         this.mediaRecorder = null;

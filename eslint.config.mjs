@@ -108,7 +108,8 @@ export default tseslint.config(
       '**/.open-next/',
       '**/.vercel/',
       '**/*.config.js',
-      '**/*.config.mjs'
+      '**/*.config.mjs',
+      '**/tsconfig.json',
     ]
   }
 );

@@ -5,7 +5,7 @@ export interface AeroStreamPilotOptions {
     url: string;
     secret: string;
     workflowId: string;
-    onMessage?: (message: any) => void;
+    onMessage?: (message: unknown) => void;
     onClose?: () => void;
 }
 
@@ -17,8 +17,8 @@ export class AeroStreamPilot {
         url, 
         secret, 
         workflowId,
-        onMessage = () => {}, 
-        onClose = () => {},
+        onMessage = () => { /* noop */ }, 
+        onClose = () => { /* noop */ },
     }: AeroStreamPilotOptions) {
         this.pipe = new AeroStreamPipe({
             url,
@@ -36,7 +36,7 @@ export class AeroStreamPilot {
 
             // setup video stream if provided
             if ( options?.videoStream) {
-                await this.video.start(options.videoStream);
+                this.video.start(options.videoStream);
             }
         }
 
@@ -55,4 +55,3 @@ export class AeroStreamPilot {
         return this.pipe.isConnected;
     }
 }
-

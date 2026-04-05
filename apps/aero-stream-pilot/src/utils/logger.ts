@@ -3,10 +3,10 @@
  * @description Defines the available log levels.
  */
 export enum LogLevel {
-    DEBUG = 'DEBUG',
-    INFO = 'INFO',
-    WARN = 'WARN',
-    ERROR = 'ERROR',
+    debug = 'DEBUG',
+    info = 'INFO',
+    warn = 'WARN',
+    error = 'ERROR',
 }
 
 /**
@@ -18,7 +18,7 @@ interface LogEntry {
     level: LogLevel;
     category: string;
     message: string;
-    context?: any;
+    context?: unknown;
 }
 
 /**
@@ -35,9 +35,9 @@ export class Logger {
      * The core logging function.
      * @param {LogLevel} level - The level of the log entry.
      * @param {string} message - The main log message.
-     * @param {any} [context] - Optional context to include in the log.
+     * @param {unknown} [context] - Optional context to include in the log.
      */
-    private log(level: LogLevel, message: string, context?: any) {
+    private log(level: LogLevel, message: string, context?: unknown) {
         const logEntry: LogEntry = {
             timestamp: new Date().toISOString(),
             level,
@@ -46,56 +46,61 @@ export class Logger {
         };
 
         if (context) {
-            // Ensure errors are serialized properly
-            if (context.error instanceof Error) {
-                logEntry.context = { 
-                    ...context,
-                    error: { 
-                        message: context.error.message, 
-                        stack: context.error.stack 
-                    } 
-                };
+            if (typeof context === 'object') {
+                const ctx = context as Record<string, unknown>;
+                if (ctx.error instanceof Error) {
+                    logEntry.context = { 
+                        ...ctx,
+                        error: { 
+                            message: ctx.error.message, 
+                            stack: ctx.error.stack 
+                        } 
+                    };
+                } else {
+                    logEntry.context = context;
+                }
             } else {
                 logEntry.context = context;
             }
         }
 
+        // eslint-disable-next-line no-console
         console.log(JSON.stringify(logEntry)); // Using indentation for readability
     }
 
     /**
      * Logs a debug message.
      * @param {string} message - The main log message.
-     * @param {any} [context] - Optional context to include in the log.
+     * @param {unknown} [context] - Optional context to include in the log.
      */
-    debug(message: string, context?: any) {
-        this.log(LogLevel.DEBUG, message, context);
+    debug(message: string, context?: unknown) {
+        this.log(LogLevel.debug, message, context);
     }
     
     /**
      * Logs an info message.
      * @param {string} message - The main log message.
-     * @param {any} [context] - Optional context to include in the log.
+     * @param {unknown} [context] - Optional context to include in the log.
      */
-    info(message: string, context?: any) {
-        this.log(LogLevel.INFO, message, context);
+    info(message: string, context?: unknown) {
+        this.log(LogLevel.info, message, context);
     }
 
     /**
      * Logs a warning message.
      * @param {string} message - The main log message.
-     * @param {any} [context] - Optional context to include in the log.
+     * @param {unknown} [context] - Optional context to include in the log.
      */
-    warn(message: string, context?: any) {
-        this.log(LogLevel.WARN, message, context);
+    warn(message: string, context?: unknown) {
+        this.log(LogLevel.warn, message, context);
     }
 
     /**
      * Logs an error message.
      * @param {string} message - The main log message.
-     * @param {any} [context] - Optional context to include in the log.
+     * @param {unknown} [context] - Optional context to include in the log.
      */
-    error(message: string, context?: any) {
-        this.log(LogLevel.ERROR, message, context);
+    error(message: string, context?: unknown) {
+        this.log(LogLevel.error, message, context);
     }
 }

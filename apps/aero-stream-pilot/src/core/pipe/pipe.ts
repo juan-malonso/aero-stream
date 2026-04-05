@@ -6,7 +6,7 @@ export interface AeroStreamPipeOptions {
     url: string;
     secret: string;
     workflowId: string;
-    onMessage: (message: any) => void;
+    onMessage: (message: unknown) => void;
     onClose: () => void;
 }
 
@@ -16,7 +16,7 @@ export class AeroStreamPipe {
     // connection
     private url: URL;
     private workflowId: string;
-    private _handler: (message: any) => void;
+    private _handler: (message: unknown) => void;
     private _close: () => void;
 
     // communication 
@@ -57,9 +57,9 @@ export class AeroStreamPipe {
                 this.ws.addEventListener('error', (error) => { this._onError(error, reject); });
                 this.ws.addEventListener('close', () => { this._onClose(); });
             } catch (error) {
-                this.logger.error('Failed to initialize WebSocket', { error });
+                this.logger.error('Failed to initialize WebSocket', { error: String(error) });
                 this.isConnected = false;
-                reject(error);
+                reject(error as Error);
             }
         });
     }
@@ -84,65 +84,55 @@ export class AeroStreamPipe {
         this.ws?.send(payload);
     }
 
-    private _onMessage(data: any, resolve: (value: PromiseLike<boolean> | boolean) => void) {
-        let payloadObj: any;
-
-        try {
-            payloadObj = JSON.parse(data);
-        } catch (error) {
-            this.logger.warn('Received non-JSON message', { data });
+    private _onMessage(data: unknown, resolve: (value: PromiseLike<boolean> | boolean) => void) {
+        if (typeof data !== 'string') {
+            this.logger.warn('Received non-string message, ignoring.', { data });
             return;
         }
 
-        // Si no tiene data ni nonce, es un mensaje no encriptado (ej. Errores desde el backend)
-        if (!payloadObj.data || !payloadObj.nonce) {
-            this.logger.debug('Received unencrypted message', { payloadObj });
-            try { this._handler(payloadObj); } catch (e) { this.logger.error('Error in handler', { e }); }
-            return;
-        }
-
-        const payload = {
-            data: new Uint8Array(payloadObj.data),
-            nonce: new Uint8Array(payloadObj.nonce)
-        };
-
-        let decryptedMessage: any;
-
         try {
+            const message = JSON.parse(data) as { data: number[], nonce: number[] };
+            
+            const payload = {
+                data: new Uint8Array(message.data),
+                nonce: new Uint8Array(message.nonce)
+            }
+
             if (this.isConnected) {
-                decryptedMessage = decrypt(payload, this.towerKey, this.pilotKey.secretKey);
+                if (!this.towerKey) {
+                    throw new Error('Received message before tower key was established.');
+                }
+                
+                this._handler(decrypt(payload, this.towerKey, this.pilotKey.secretKey));
             } else {
                 const decrypted = nacl.secretbox.open(
                     payload.data, 
                     payload.nonce, 
                     this.secretKey
                 );
-                if (!decrypted) throw new Error('Handshake decryption failed. Invalid secret key.');
-                const message =  JSON.parse(new TextDecoder().decode(decrypted));
-                this.towerKey = new Uint8Array(message.towerKey);
-                decryptedMessage = { sessionId: message.sessionId };
-                this.isConnected = true;
-                resolve(true);
-            }
-        } catch(error) {
-            this.logger.warn('Could not decrypt message, passing raw data.', { error, data });
-            decryptedMessage = { error, raw: payloadObj };
-        }
+                if (!decrypted) {
+                    throw new Error('Handshake decryption failed. Invalid secret key.');
+                }
 
-        // Se ejecuta el handler fuera del bloque de desencriptación
-        if (decryptedMessage) {
-            try {
-                this._handler(decryptedMessage);
-            } catch (error) {
-                this.logger.error('Error executing message handler', { error });
+                const message = JSON.parse(new TextDecoder().decode(decrypted)) as { towerKey: number[], sessionId: string };
+                
+                this.towerKey = new Uint8Array(message.towerKey);
+                this.isConnected = true;
+                
+                this._handler({ sessionId: message.sessionId });
             }
+
+            resolve(true);
+        } catch(error) {
+            this.logger.warn('Could not decrypt message, passing raw data.', { error: String(error), data });
+            this._handler({ error });
         }
     }
 
-    private _onError(error: Event, reject: (reason?: any) => void) {
-        this.logger.error('WebSocket connection failed. Check the DevTools Network tab for HTTP status codes (e.g., 403 Forbidden).');
+    private _onError(error: Event, reject: (reason?: Event) => void) {
+        this.logger.error('WebSocket error', { error });
         this.isConnected = false;
-        reject(new Error('WebSocket connection failed'));
+        reject(error);
     }
 
     private _onClose() {
@@ -152,10 +142,11 @@ export class AeroStreamPipe {
     }
 
     public send(data: object) {
-        if (!this.isConnected || !this.ws) {
+        if (!this.isConnected || !this.ws || !this.towerKey) {
             this.logger.error('Cannot send message, not connected.');
             return;
         }
+
         const payload = encrypt(data, this.towerKey, this.pilotKey.secretKey);
         this.ws.send(payload);
     }
@@ -164,17 +155,14 @@ export class AeroStreamPipe {
         if (this.ws) {
             this.ws.close();
         }
+
         this.isConnected = false;
     }
 }
 
 
-function encrypt(data: any, publicKey: any, secretKey: any) {
+function encrypt(data: unknown, publicKey: Uint8Array, secretKey: Uint8Array): string {
     const message = JSON.stringify(data);
-
-    if (!publicKey) {
-        throw new Error('Cannot encrypt message, tower key not available.');
-    }
 
     const nonce = nacl.randomBytes(nacl.box.nonceLength);
     const encrypted = nacl.box(
@@ -187,7 +175,7 @@ function encrypt(data: any, publicKey: any, secretKey: any) {
     return JSON.stringify({ data: Array.from(encrypted), nonce: Array.from(nonce) });
 }
 
-function decrypt(event: { data: Uint8Array, nonce: Uint8Array }, publicKey: any, secretKey: any) {
+function decrypt(event: { data: Uint8Array, nonce: Uint8Array }, publicKey: Uint8Array, secretKey: Uint8Array): unknown {
     const decrypted = nacl.box.open(
         event.data, 
         event.nonce, 
@@ -197,5 +185,6 @@ function decrypt(event: { data: Uint8Array, nonce: Uint8Array }, publicKey: any,
     if (!decrypted) {
         throw new Error('Cannot decrypt message: nacl.box.open returned null.');
     }
-    return JSON.parse(new TextDecoder().decode(decrypted));
+    
+    return JSON.parse(new TextDecoder().decode(decrypted)) as unknown;
 }
