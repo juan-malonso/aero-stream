@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
 import { AeroStreamPilot } from 'aero-stream-pilot';
+import { useEffect,useRef, useState } from 'react';
 
 const token = 'my-super-secret-token';
+const workflowId = 'default-workflow-id';
 const socketUrl = 'ws://localhost:8787/app/sync';
 
 export default function Home() {
@@ -11,10 +12,10 @@ export default function Home() {
   const [logs, setLogs] = useState<string[]>([]);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [videoHistory, setVideoHistory] = useState<{ id: string, date: string }[]>([]);
-  const [memoryUsage, setMemoryUsage] = useState<string>('N/A');
-  const [fps, setFps] = useState<number>(0);
-  const [connectionTime, setConnectionTime] = useState<number>(0);
-  const [vttUrl, setVttUrl] = useState<string>('');
+  const [memoryUsage, setMemoryUsage] = useState('N/A');
+  const [fps, setFps] = useState(0);
+  const [connectionTime, setConnectionTime] = useState(0);
+  const [vttUrl, setVttUrl] = useState('');
   const pilotRef = useRef<AeroStreamPilot | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -49,6 +50,7 @@ export default function Home() {
       const pilot = new AeroStreamPilot({ 
         url: socketUrl, 
         secret: token,
+        workflowId,
         onMessage: (message: any) => {
           if (message.sessionId) {
             setSessionId(message.sessionId);
@@ -97,7 +99,7 @@ export default function Home() {
       addLog('Closing connection locally...');
     }
     if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => track.stop());
+      streamRef.current.getTracks().forEach(track => { track.stop(); });
       streamRef.current = null;
     }
     if (videoRef.current) {
@@ -117,7 +119,7 @@ export default function Home() {
         clearInterval(timerRef.current);
       }
       if (streamRef.current) {
-        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current.getTracks().forEach(track => { track.stop(); });
       }
     };
   }, []);
@@ -131,7 +133,7 @@ export default function Home() {
       .then(data => {
         if (data?.url) setVttUrl(data.url);
       })
-      .catch(e => console.error('Error fetching VTT:', e));
+      .catch(e => { console.error('Error fetching VTT:', e); });
 
     const video = viewerVideoRef.current;
     const mediaSource = new MediaSource();
@@ -253,7 +255,7 @@ export default function Home() {
 
     animationFrameId = requestAnimationFrame(updateMetrics);
 
-    return () => cancelAnimationFrame(animationFrameId);
+    return () => { cancelAnimationFrame(animationFrameId); };
   }, []);
 
   return (
@@ -284,7 +286,7 @@ export default function Home() {
             {vttUrl && <track default kind="subtitles" srcLang="es" label="Firma" src={vttUrl} />}
           </video>
           <button 
-            onClick={() => setViewingId(null)} 
+            onClick={() => { setViewingId(null); }} 
             style={{ marginTop: 10, padding: '8px 16px', cursor: 'pointer', background: '#f44336', color: 'white', border: 'none', borderRadius: '4px' }}
           >
             Close Viewer

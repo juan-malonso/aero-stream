@@ -1,18 +1,18 @@
-import type { OriginContext, SecurityPort } from '@/domain';
+import type { WorkflowContext, WorkflowPort } from '@/domain';
 import { Logger } from '@/utils';
 
-export class InMemorySecurityAdapter implements SecurityPort {
-  private readonly logger = new Logger('InMemorySecurityAdapter');
-  private readonly dictionary: Map<string, OriginContext>;
+export class InMemoryWorkflowAdapter implements WorkflowPort  {
+  private readonly logger = new Logger(InMemoryWorkflowAdapter.name);
+  private readonly dictionary: Map<string, WorkflowContext>;
 
-  constructor(config: Record<string, OriginContext>) {
+  constructor(config: Record<string, WorkflowContext>) {
     this.dictionary = new Map(Object.entries(config));
-    this.logger.info('Initialized with origins', { count: this.dictionary.size });
+    this.logger.info('Initialized with workflows', { count: this.dictionary.size });
   }
 
-  validateOrigin(origin: string): Promise<OriginContext | null> {
-    const context = this.dictionary.get(origin) ?? null;
-    this.logger.debug('Validating origin', { origin, isValid: !!context });
+  getWorkflow(workflowId: string): Promise<WorkflowContext | null> {
+    const context = this.dictionary.get(workflowId) ?? null;
+    this.logger.debug('Fetching workflow', { workflowId, found: !!context });
     return Promise.resolve(context);
   }
 }

@@ -1,10 +1,10 @@
-import { Logger } from '../utils/logger.js';
 import { AeroStreamPipe } from './pipe/pipe.js';
 import { AeroStreamVideo } from './video/video.js';
 
 export interface AeroStreamPilotOptions {
     url: string;
     secret: string;
+    workflowId: string;
     onMessage?: (message: any) => void;
     onClose?: () => void;
 }
@@ -12,17 +12,18 @@ export interface AeroStreamPilotOptions {
 export class AeroStreamPilot {
     private pipe: AeroStreamPipe;
     private video: AeroStreamVideo;
-    private videoChunkIndex: number = 0;
     
     constructor({ 
         url, 
         secret, 
+        workflowId,
         onMessage = () => {}, 
         onClose = () => {},
     }: AeroStreamPilotOptions) {
         this.pipe = new AeroStreamPipe({
             url,
             secret,
+            workflowId,
             onMessage,
             onClose,
         });

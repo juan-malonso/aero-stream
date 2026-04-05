@@ -144,11 +144,11 @@ __metadata:
 
 "aero-stream-pilot@file:../aero-stream-pilot::locator=aero-stream-pilot-example%40workspace%3A.":
   version: 1.0.0
-  resolution: "aero-stream-pilot@file:../aero-stream-pilot#../aero-stream-pilot::hash=d27da6&locator=aero-stream-pilot-example%40workspace%3A."
+  resolution: "aero-stream-pilot@file:../aero-stream-pilot#../aero-stream-pilot::hash=efed18&locator=aero-stream-pilot-example%40workspace%3A."
   dependencies:
     tweetnacl: "npm:^1.0.3"
     uuid: "npm:^9.0.1"
-  checksum: 10c0/1b975125d7fb13c7854779c6de65397d5533a192c0a0d8a37dbaff412bfb7ec8616a578cd0c7e294d30550476aa868e3074c0d20949ec59b55ebde8a599aa153
+  checksum: 10c0/6a0e5f1f3d903958b2d7ce0d8bbd12375563c129a9b9a516751cbed4156aa909c1b04224659aa695b35a573adcae649c62bbdae471c5e7f9fc6ba1bd19f4f108
   languageName: node
   linkType: hard
 

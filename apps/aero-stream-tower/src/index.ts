@@ -1,34 +1,46 @@
 import { ResourceController, SyncController } from './application';
 import { ORIGINS } from './constants';
 import { type AppContext, AppRouter, GeneratePresignedUrlUseCase } from './domain';
-import { InMemorySecurityAdapter, R2StorageAdapter } from './infrastructure';
+import { InMemoryWorkflowAdapter, R2StorageAdapter } from './infrastructure';
+import { Logger } from './utils';
 
 import { upgradeWebSocket } from 'hono/cloudflare-workers';
+import { cors } from 'hono/cors';
 
 const app = new AppRouter();
+const logger = new Logger('AppRouter');
 const generatePresignedUrlUseCase = new GeneratePresignedUrlUseCase();
-const securityAdapter = new InMemorySecurityAdapter(ORIGINS);
+const securityAdapter = new InMemoryWorkflowAdapter(ORIGINS);
 
-// Origin Evaluation Middleware
-app.use('*', async (c: AppContext, next: () => Promise<void>) => {
+// Global CORS Middleware
+app.use('*', cors());
+
+// Middleware de Autenticación
+app.use('/app/sync', async (c: AppContext, next: () => Promise<void>) => {
   const origin = c.req.header('Origin');
-
-  if (origin) {
-    const originContext = await securityAdapter.validateOrigin(origin);
-
-    if (originContext?.token) {
-      c.set('secretToken', originContext.token);
-    } else {
-      return c.text('Forbidden: Origin not allowed', 403);
-    }
-
-    await next();
-    c.res.headers.set('Access-Control-Allow-Origin', origin);
-    c.res.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    c.res.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (!origin) {
+    logger.warn('WebSocket connection attempt without Origin header');
+    return c.text('Forbidden: Origin header missing', 403);
   }
 
-  return c.text('Forbidden: Origin not allowed', 403);
+  const wsProtocol = c.req.header('sec-websocket-protocol');
+  const workflowId = wsProtocol ? wsProtocol.split(',')[0].trim() : null;
+  if (!workflowId) {
+    logger.warn('WebSocket connection attempt without workflowId', { origin });
+    return c.text('Forbidden: Workflow ID missing', 403);
+  }
+
+  const workflowContext = await securityAdapter.getWorkflow(workflowId);
+  if (!workflowContext?.connection.origins.includes(origin)) {
+    logger.warn('WebSocket connection attempt from unauthorized origin', { origin, workflowId });
+    return c.text('Forbidden: Not Allowed', 403);
+  }
+
+  c.set('secretToken', workflowContext.connection.encription.symetric);
+  c.set('workflowId', workflowId);
+  
+  await next();
+  c.res.headers.set('Sec-WebSocket-Protocol', workflowId);
 });
 
 

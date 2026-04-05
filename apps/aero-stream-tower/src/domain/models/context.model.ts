@@ -10,12 +10,14 @@ export interface Bindings {
   ['ACCESS_KEY_ID']: string;
   ['SECRET_ACCESS_KEY']: string;
   
+  // LOCAL
   ['ENVIRONMENT']: 'development' | 'production';
   ['SECRET_TOKEN_KEY']?: string;
 }
 
 export interface Variables {
   secretToken: string;
+  workflowId: string;
 }
 
 export interface AppEnv {

@@ -201,11 +201,13 @@ export class SyncController {
         this.logger.info('Connection closed, executing safe cleanup.', { sessionId });
         clearTimers();
         
-        c.executionCtx.waitUntil(
-          dispatcher.handleDisconnect().catch((error: unknown) => {
-            this.logger.error('Error during disconnect cleanup', { error: String(error) });
-          })
-        );
+        if (connected) {
+          c.executionCtx.waitUntil(
+            dispatcher.handleDisconnect().catch((error: unknown) => {
+              this.logger.error('Error during disconnect cleanup', { error: String(error) });
+            })
+          );
+        }
       },
     };
   }
