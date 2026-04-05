@@ -1,5 +1,6 @@
-import { describe, it, expect, beforeEach } from 'vitest';
-import { AeroStreamPilot } from '../src/index';
+import { AeroStreamPilot } from '../src/index.js';
+
+import { beforeEach,describe, expect, it } from 'vitest';
 
 describe('AeroStreamPilot', () => {
   let pilot: AeroStreamPilot;
@@ -11,7 +12,7 @@ describe('AeroStreamPilot', () => {
     pilot = new AeroStreamPilot({ 
         url: mockUrl, 
         secret: mockSecret, 
-        workflowId: mockWorkflowId 
+        workflowId: mockWorkflowId
     });
   });
 
