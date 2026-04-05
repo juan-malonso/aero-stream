@@ -5,6 +5,7 @@ export interface AeroStreamPilotOptions {
     url: string;
     secret: string;
     workflowId: string;
+    videoStream: MediaStream;
     onMessage?: (message: unknown) => void;
     onClose?: () => void;
 }
@@ -17,6 +18,7 @@ export class AeroStreamPilot {
         url, 
         secret, 
         workflowId,
+        videoStream,
         onMessage = () => { /* noop */ }, 
         onClose = () => { /* noop */ },
     }: AeroStreamPilotOptions) {
@@ -27,17 +29,14 @@ export class AeroStreamPilot {
             onMessage,
             onClose,
         });
-        this.video = new AeroStreamVideo(this.pipe);
+        
+        this.video = new AeroStreamVideo(this.pipe, videoStream);
     }
 
-    async connect(options?: { videoStream?: MediaStream }): Promise<boolean> {
+    async connect(): Promise<boolean> {
         const connected = await this.pipe.connect();
         if (connected) {
-
-            // setup video stream if provided
-            if ( options?.videoStream) {
-                this.video.start(options.videoStream);
-            }
+            this.video.start();
         }
 
         return connected;
@@ -48,10 +47,15 @@ export class AeroStreamPilot {
     }
 
     public disconnect() {
+        this.video.stop();
         this.pipe.close();
     }
 
     public get isConnected(): boolean {
         return this.pipe.isConnected;
+    }
+
+    public getLiveStream(): MediaStream | null {
+        return this.video.getLiveStream();
     }
 }

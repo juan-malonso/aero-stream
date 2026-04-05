@@ -11,11 +11,17 @@ tasks:
     cmds:
       - yarn install
 
+  sync-pilot:
+    desc: 'Build, clean cache and sync local aero-stream-pilot package'
+    silent: false
+    cmds:
+      - task: pilot-task:pack
+      - task: install
+
   build:
     desc: 'Build the worker for production.'
     deps:
-      - pilot-task:pack
-      - install
+      - sync-pilot
     cmds:
       - yarn build
 
@@ -29,7 +35,7 @@ tasks:
   dev:
     desc: 'Run the worker in development mode with hot-reloading.'
     deps:
-      - build
+      - sync-pilot
     cmds:
       - yarn dev
 

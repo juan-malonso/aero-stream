@@ -7,6 +7,13 @@ const token = 'my-super-secret-token';
 const workflowId = 'default-workflow-id';
 const socketUrl = 'ws://localhost:8787/app/sync';
 
+enum ConnectionStatus {
+  Disconnected = 'Disconnected',
+  Connecting = 'Connecting...',
+  Connected = 'Connected',
+  ConnectionError = 'Connection Error',
+}
+
 interface PilotConnectionProps {
   onSessionId: (id: string | null) => void;
   onStatusChange: (status: string) => void;
@@ -15,32 +22,30 @@ interface PilotConnectionProps {
 }
 
 export function PilotConnection({ onSessionId, onStatusChange, onTimeTick, onTimeReset }: PilotConnectionProps) {
-  const pilotRef = useRef<AeroStreamPilot | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const streamRef = useRef<MediaStream | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const [status, setStatus] = useState('Disconnected');
+  const [status, setStatus] = useState<ConnectionStatus>(ConnectionStatus.Disconnected);
 
   useEffect(() => {
     onStatusChange(status);
   }, [status, onStatusChange]);
 
+  // Pilot reference
+  const pilotRef = useRef<AeroStreamPilot | null>(null);
+
   const handleConnect = async () => {
     try {
-      setStatus('Connecting...');
+      setStatus(ConnectionStatus.Connecting);
       onSessionId(null);
 
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
-      streamRef.current = stream;
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-      }
 
-      const pilot = new AeroStreamPilot({ 
+      pilotRef.current = new AeroStreamPilot({ 
         url: socketUrl, 
         secret: token,
         workflowId,
+        videoStream: stream,
         onMessage: (message: unknown) => {
           const msgSessionId = (message as { sessionId?: string }).sessionId;
           if (msgSessionId) {
@@ -51,19 +56,21 @@ export function PilotConnection({ onSessionId, onStatusChange, onTimeTick, onTim
           handleDisconnect();
         },
       });
-
-      pilotRef.current = pilot;
       
-      await pilot.connect({ videoStream: stream });
+      await pilotRef.current.connect();
 
-      if (pilot.isConnected) {
-        setStatus('Connected');
+      if (videoRef.current) {
+        videoRef.current.srcObject = pilotRef.current.getLiveStream();
+      }
+
+      if (pilotRef?.current.isConnected) {
+        setStatus(ConnectionStatus.Connected);
 
         onTimeReset();
         timerRef.current = setInterval(() => { onTimeTick(); }, 1000);
       }
     } catch (error: unknown) {
-      setStatus('Connection Error');
+      setStatus(ConnectionStatus.ConnectionError);
       console.error('Connection error:', error);
     }
   };
@@ -73,25 +80,27 @@ export function PilotConnection({ onSessionId, onStatusChange, onTimeTick, onTim
       clearInterval(timerRef.current);
       timerRef.current = null;
     }
-    if (pilotRef.current) {
-      if (typeof pilotRef.current.disconnect === 'function') {
+
+    if (pilotRef.current?.isConnected) {
         pilotRef.current.disconnect();
-      }
+        pilotRef.current = null;
     }
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(track => { track.stop(); });
-      streamRef.current = null;
-    }
+
     if (videoRef.current) {
       videoRef.current.srcObject = null;
     }
-    setStatus('Disconnected');
+    setStatus(ConnectionStatus.Disconnected);
   };
 
   useEffect(() => {
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current);
-      if (streamRef.current) streamRef.current.getTracks().forEach(track => { track.stop(); });
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+      }
+
+      if (pilotRef.current?.isConnected) {
+        pilotRef.current.disconnect();
+      }
     };
   }, []);
 

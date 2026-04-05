@@ -3,15 +3,19 @@ import type { AeroStreamPipe } from "../pipe/pipe.js";
 type EventListener = (...args: unknown[]) => void;
 
 export class AeroStreamVideo {
-    private events: Record<string, EventListener[] | undefined> = {};
-    private mediaStream: MediaStream | null = null;
+    private readonly events: Record<string, EventListener[] | undefined> = {};
+    private readonly mediaStream: MediaStream;
+
     private mediaRecorder: MediaRecorder | null = null;
     private chunkCounter = 1;
 
-    constructor(pipe: AeroStreamPipe) {
+    constructor(pipe: AeroStreamPipe, stream: MediaStream) {
+        this.mediaStream = stream.clone();
         this.on('data', (data: unknown) => {
             const reader = new FileReader();
             reader.onload = () => {
+                if (!this.mediaRecorder) return;
+
                 // Create a new buffer: 4 bytes for the ID + video chunk size
                 const chunk = reader.result as ArrayBuffer;
                 const totalSize = 4 + chunk.byteLength;
@@ -65,14 +69,17 @@ export class AeroStreamVideo {
         this.events[event].forEach(listener => { listener(...args); });
     }
 
-    start(mediaStream: MediaStream) {
+    getLiveStream(): MediaStream | null {
+        return this.mediaStream.clone();
+    }
+
+    start() {
         try {
             this.chunkCounter = 1;
-            this.mediaStream = mediaStream;
             this.mediaRecorder = new MediaRecorder(this.mediaStream);
 
             this.mediaRecorder.ondataavailable = (event) => {
-                if (event.data.size > 0) {
+                if (this.mediaRecorder && event.data.size > 0) {
                     this.emit('data', event.data);
                 }
             };
@@ -88,10 +95,8 @@ export class AeroStreamVideo {
         if (this.mediaRecorder && this.mediaRecorder.state !== 'inactive') {
             this.mediaRecorder.stop();
         }
-        if (this.mediaStream) {
-            this.mediaStream.getTracks().forEach(track => { track.stop(); });
-        }
-        this.mediaStream = null;
+
+        this.mediaStream.getTracks().forEach(track => { track.stop(); });
         this.mediaRecorder = null;
     }
 }

@@ -2949,24 +2949,31 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "aero-stream-pilot-example@workspace:apps/aero-stream-pilot-example"
   dependencies:
+    "@eslint/eslintrc": "npm:3.3.5"
+    "@eslint/js": "npm:10.0.1"
     "@types/node": "npm:^20.19.37"
     "@types/react": "npm:^18"
     "@types/react-dom": "npm:^18"
     aero-stream-pilot: "file:../aero-stream-pilot"
+    eslint: "npm:10.2.0"
+    eslint-config-prettier: "npm:10.1.8"
+    eslint-plugin-import: "npm:2.32.0"
+    eslint-plugin-simple-import-sort: "npm:12.1.1"
     next: "npm:14.2.3"
     react: "npm:^18.3.1"
     react-dom: "npm:^18.3.1"
     typescript: "npm:^5.4.5"
+    typescript-eslint: "npm:8.58.0"
   languageName: unknown
   linkType: soft
 
 "aero-stream-pilot@file:../aero-stream-pilot::locator=aero-stream-pilot-example%40workspace%3Aapps%2Faero-stream-pilot-example":
   version: 1.0.0
-  resolution: "aero-stream-pilot@file:../aero-stream-pilot#../aero-stream-pilot::hash=d80732&locator=aero-stream-pilot-example%40workspace%3Aapps%2Faero-stream-pilot-example"
+  resolution: "aero-stream-pilot@file:../aero-stream-pilot#../aero-stream-pilot::hash=65aa04&locator=aero-stream-pilot-example%40workspace%3Aapps%2Faero-stream-pilot-example"
   dependencies:
     tweetnacl: "npm:^1.0.3"
     uuid: "npm:^9.0.1"
-  checksum: 10c0/c8ec9094de02f7e58ac0b3eb159c2e3e56be33744f9427086f4ad22c836cc006dfd28bbce1dd2f3574a24c62c6d0ce170c12f67e10e2e859b785925dffa713dc
+  checksum: 10c0/6be3120d9e53e397e8b241b92666e385b13147b8e89ff2450bd6e7f8e8ff6c665e3f09e0445152d1ca3a9614bc912667192c3a66f2465859db2accfd3726dda9
   languageName: node
   linkType: hard
 
