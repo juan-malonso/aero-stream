@@ -1,59 +1,50 @@
-import { Events, Payload } from '../models';
-import { VideoService } from '../services';
+import { Logger } from '@/utils';
+
+import { Events, type Payload, type WsConnection } from '../models';
+import type { VideoService } from '../services';
 
 export class WebSocketDispatcherUseCase {
-  constructor(private readonly videoService: VideoService) {}
+  private readonly logger = new Logger('WebSocketDispatcherUseCase');
 
-  async dispatch(event: Payload<Events>, ws: WebSocket): Promise<void> {
+  constructor(
+    private readonly videoService: VideoService,
+  ) {}
+
+  async dispatch(event: Payload<Events>, ws: WsConnection): Promise<void> {
     try {
       await this.handleMessage(event, ws);
-
     } catch (error) {
-      console.error('Dispatcher error:', error);
+      this.logger.error('Dispatcher error', { error: String(error) });
       ws.send(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }));
     }
   }
 
-  private async handleMessage(message: Payload<Events>, ws: WebSocket) {
+  private async handleMessage(message: Payload<Events>, _ws: WsConnection) {
     switch (message.type) {
-      case 'VIDEO_START':
-        const uploadId = await this.videoService.startUpload(message.fileName, message.mimeType);
-        ws.send(JSON.stringify({ type: 'UPLOAD_STARTED', uploadId }));
+      case Events.video: {
+        const buffer = Buffer.from(String(message.chunk), 'base64');
+        const dataView = new DataView(buffer.buffer, buffer.byteOffset, buffer.byteLength);
+        
+        const partNumber = dataView.getUint32(0, true) + 1;
+        const chunkData = new Uint8Array(buffer.buffer, buffer.byteOffset + 4, buffer.byteLength - 4); 
+        await this.videoService.uploadPart(partNumber, chunkData);
         break;
-      case 'VIDEO_END':
-        const key = await this.videoService.completeUpload();
-        ws.send(JSON.stringify({ type: 'UPLOAD_COMPLETED', key }));
-        break;
-      case 'FLIGHT_SYNC':
-        console.log('Routing to Flight Service:', message.payload);
-        // await this.flightService.syncState(message.payload);
-        break;
-      case 'TELEMETRY':
-        console.log('Routing to Telemetry Service:', message.payload);
-        // await this.telemetryService.record(message.payload);
-        break;
-      default:
-        console.warn('Unknown message type received', message);
-    }
-  }
+      }
 
-  private async handleBinaryMessage(data: ArrayBuffer, ws: WebSocket) {
-    // If you plan to receive other binary streams (e.g., audio), you should use the first
-    // byte of 'data' as an "opcode" to know which service to dispatch the ArrayBuffer to.
-    if (this.videoService.isUploading) {
-      const dataView = new DataView(data);
-      const partNumber = dataView.getUint32(0, true);
-      const chunkData = data.slice(4);
-      
-      await this.videoService.processChunk(partNumber, chunkData);
-      ws.send(JSON.stringify({ type: 'CHUNK_UPLOADED', partNumber }));
-    } else {
-      ws.send(JSON.stringify({ error: 'Unexpected binary payload.' }));
+      case Events.metric: {
+        this.logger.debug('Routing to Metric', { payload: message.payload });
+        break;
+      }
+
+      default:
+        this.logger.warn('Unknown message type received', { message });
     }
   }
 
   async handleDisconnect(): Promise<void> {
-    console.log('Dispatcher: WebSocket disconnected, cleaning up...');
-    await this.videoService.abortUpload();
+    this.logger.info('WebSocket disconnected, cleaning up...');
+    await Promise.all([
+      this.videoService.finishUpload(),
+    ]);
   }
 }

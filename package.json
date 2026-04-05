@@ -1,0 +1,54 @@
+{
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "packageManager": "yarn@4.12.0+sha512.f45ab632439a67f8bc759bf32ead036a1f413287b9042726b7cc4818b7b49e14e9423ba49b18f9e06ea4941c1ad062385b1d8760a8d5091a1a31e5f6219afca8",
+  "dependenciesMeta": {
+    "eslint-config-next@14.2.35": {
+      "unplugged": true
+    }
+  },
+  "packageExtensions": {
+    "@eslint/eslintrc@*": {
+      "peerDependencies": {
+        "eslint": "*"
+      }
+    },
+    "eslint-config-next@*": {
+      "peerDependencies": {
+        "eslint": "*"
+      }
+    },
+    "eslint-config-prettier@*": {
+      "peerDependencies": {
+        "eslint": "*"
+      }
+    },
+    "eslint-plugin-import@*": {
+      "peerDependencies": {
+        "eslint": "*"
+      }
+    },
+    "eslint-plugin-react@*": {
+      "peerDependencies": {
+        "eslint": "*"
+      }
+    },
+    "eslint-plugin-react-hooks@*": {
+      "peerDependencies": {
+        "eslint": "*"
+      }
+    },
+    "eslint-plugin-simple-import-sort@*": {
+      "peerDependencies": {
+        "eslint": "*"
+      }
+    },
+    "typescript-eslint@*": {
+      "peerDependencies": {
+        "eslint": "*"
+      }
+    }
+  }
+}

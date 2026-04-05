@@ -14,7 +14,7 @@ tasks:
     deps:
       - install
     cmds:
-      - yarn deploy --dry-run --outdir=dist # Use deploy's build mechanism
+      - yarn build
 
   start:
     desc: 'Run the built worker locally.'

@@ -1,34 +1,42 @@
+import { INACTIVITY_TIMEOUT_MS, MAX_CONNECTION_TIME_MS } from '@/constants';
+import { 
+  type Context,
+  Events,
+  type Payload,
+  type StoragePort,
+  VideoService,
+  WebSocketDispatcherUseCase,
+  type WsConnection } from '@/domain';
+import { Logger } from '@/utils';
 
 import nacl from 'tweetnacl';
 import { v4 as uuidv4 } from 'uuid';
 
-import { 
-  Context, 
-  Events, 
-  Payload, 
-  StoragePort, 
-  VideoService, 
-  WebSocketDispatcherUseCase
-} from '@/domain';
-import {
-  MAX_CONNECTION_TIME_MS,
-  INACTIVITY_TIMEOUT_MS,
-} from '@/constants';
+export interface EncryptedPayload {
+  data: Iterable<number>;
+  nonce: Iterable<number>;
+}
 
 export class SyncController {
+  private readonly logger = new Logger('SyncController');
+
   constructor(private readonly storageAdapter: StoragePort) {}
 
   handleWebSocket(c: Context) {
+    // Initialize services
     const storageAdapter = this.storageAdapter;
     const videoService = new VideoService(storageAdapter);
+
+    // Initialize dispatcher
     const dispatcher = new WebSocketDispatcherUseCase(videoService);
 
     // Encryption keys for the current session
+    let connected = false;
     let pilotPublicKey: Uint8Array | null = null;
-    let towerPublicKey: Uint8Array | null = null;
-    let towerPrivateKey: Uint8Array | null = null;
-
-    let sessionId: string | null = null;
+    const sessionId: string = uuidv4();
+    const keyPair = nacl.box.keyPair();
+    const towerPublicKey = keyPair.publicKey;
+    const towerPrivateKey = keyPair.secretKey;
 
     // Timeouts timers
     let maxTimeoutId: ReturnType<typeof setTimeout> | null = null;
@@ -38,26 +46,34 @@ export class SyncController {
 
     // decrypt message
     const decryptMessage = (event: { data: Uint8Array, nonce: Uint8Array }): Payload<Events> => {
+      if (!pilotPublicKey) throw new Error('Pilot public key not found');
       const decrypted = nacl.box.open(
         event.data, 
         event.nonce, 
         pilotPublicKey, 
         towerPrivateKey
       );
+
+      if (!decrypted) throw new Error('Failed to decrypt message');
       const message = new TextDecoder().decode(decrypted);
-      return JSON.parse(message);
+
+      return JSON.parse(message) as Payload<Events>;
     };
 
     // encrypt message
     const encryptMessage = (data: object): string => {
+      if (!pilotPublicKey) throw new Error('Pilot public key not found');
+
       const message = JSON.stringify(data);
       const nonce = nacl.randomBytes(nacl.box.nonceLength);
+
       const encrypted = nacl.box(
         new TextEncoder().encode(message),
         nonce,
         pilotPublicKey,
         towerPrivateKey
       );
+      
       return JSON.stringify({ data: Array.from(encrypted), nonce: Array.from(nonce) });
     }
 
@@ -70,39 +86,43 @@ export class SyncController {
     };
 
     // Set/Reset the inactivity timer
-    const resetInactivityTimers = (ws: WebSocket) => {
+    const resetInactivityTimers = (ws: WsConnection) => {
       if (inactivityTimeoutId) clearTimeout(inactivityTimeoutId);
       inactivityTimeoutId = setTimeout(() => {
         try {
-          console.log(`Tower: Connection closed due to ${INACTIVITY_TIMEOUT_MS / 1000}s of inactivity.`);
+          this.logger.info(`Connection closed due to inactivity`, { timeoutMs: INACTIVITY_TIMEOUT_MS });
           ws.send(encryptMessage({ 
-            type: Events.CLOSED, 
-            message: `Connection closed due to ${INACTIVITY_TIMEOUT_MS / 1000}s of inactivity.` }));
+              type: Events.closed, 
+            message: `Connection closed due to ${String(INACTIVITY_TIMEOUT_MS / 1000)}s of inactivity.` }));
           ws.close();
-        } catch (e) {}
+          } catch (error: unknown) {
+            this.logger.error('Error closing inactive WebSocket', { error: error instanceof Error ? error : new Error(String(error)) });
+        }
       }, INACTIVITY_TIMEOUT_MS);
     };
 
     // Set the maximum connection time timer
-    const resetMaxConnectionTimer = (ws: WebSocket) => {
+    const resetMaxConnectionTimer = (ws: WsConnection) => {
       if (maxTimeoutId) clearTimeout(maxTimeoutId);
       maxTimeoutId = setTimeout(() => {
         try { 
-          console.log(`Tower: Connection closed due to ${MAX_CONNECTION_TIME_MS / 1000}s maximum connection time.`);
+          this.logger.info(`Connection closed due to maximum connection time`, { timeoutMs: MAX_CONNECTION_TIME_MS });
           ws.send(encryptMessage({
-            type: Events.CLOSED,
-            message: `Connection closed due to ${MAX_CONNECTION_TIME_MS / 1000}s maximum connection time.`
+              type: Events.closed,
+            message: `Connection closed due to ${String(MAX_CONNECTION_TIME_MS / 1000)}s maximum connection time.`
           }));
           ws.close(); 
-        } catch (e) {}
+          } catch (error: unknown) {
+            this.logger.error('Error closing max duration WebSocket', { error: error instanceof Error ? error : new Error(String(error)) });
+        }
       }, MAX_CONNECTION_TIME_MS);
     };
 
     // ============================================================== HANDLERS =
 
     // Handles the initial handshake and key exchange
-    const handshakeMessage = async (event: { data: Uint8Array, nonce: Uint8Array }, ws: WebSocket) => {
-      const secretBytes = new TextEncoder().encode(c.get('secretToken'));
+    const handshakeMessage = async (event: { data: Uint8Array, nonce: Uint8Array }, ws: WsConnection) => {
+      const secretBytes = new TextEncoder().encode(String(c.get('secretToken')));
       const secretKey = new Uint8Array(32);
       secretKey.set(secretBytes.slice(0, 32));
       
@@ -113,13 +133,10 @@ export class SyncController {
       );
       if (!decrypted) throw new Error('Failed to decrypt handshake message');
 
-      const data = JSON.parse(new TextDecoder().decode(decrypted))
+      const data = JSON.parse(new TextDecoder().decode(decrypted)) as { pilotKey: Iterable<number> };
       pilotPublicKey = new Uint8Array(data.pilotKey);
 
-      const newKeyPair = nacl.box.keyPair();
-      towerPublicKey = newKeyPair.publicKey;
-      towerPrivateKey = newKeyPair.secretKey;
-      sessionId = uuidv4();
+      await videoService.initializeStream(sessionId);
 
       const responsePayload = JSON.stringify({ 
         towerKey: Array.from(towerPublicKey), 
@@ -138,51 +155,57 @@ export class SyncController {
         nonce: Array.from(responseNonce)
       }));
       
-      console.log(`New session started with ID: ${sessionId}`);
+      this.logger.info('New session started', { sessionId });
       
       await storageAdapter.upload(`${sessionId}/general`, JSON.stringify({ createAt: new Date().toISOString() }));
-      resetInactivityTimers(ws);
     }
 
     // ============================================== WEBSOCKET EVENT HANDLERS =
     return {
       // Connection message handler
-      async onMessage(event: MessageEvent, ws: WebSocket) {
+      onMessage: async (event: MessageEvent<unknown>, ws: WsConnection) => {
         try {
-          const message = JSON.parse(event.data);
+          const messageData = String(event.data);
+          const message = JSON.parse(messageData) as EncryptedPayload;
           const payload = {
             data: new Uint8Array(message.data),
             nonce: new Uint8Array(message.nonce)
           }
 
-          if (sessionId === null) {
+          if (!connected) {
+            connected = true;
             await handshakeMessage(payload, ws);
           } else {
             await dispatcher.dispatch(decryptMessage(payload), ws);
           }
-          
-          resetInactivityTimers(ws);    
-        } catch (error) {
-          console.error('Error processing message in SyncController:', error);
-          
-          if (sessionId === null) {
+             
+        } catch (error: unknown) {
+          this.logger.error('Error processing message', { error: String(error) });
+          if (!connected) {
             ws.close(1008, 'Policy Violation: Handshake failed or unauthorized');
           }
+        } finally {
+          resetInactivityTimers(ws);
         }
       },
       
       // Connection oppen handler
-      onOpen(_evt: Event, ws: WebSocket) {
-        console.log('Tower: Connection established with the Pilot.');
-        resetMaxConnectionTimer(ws);
+      onOpen: (_evt: Event, ws: WsConnection) => {
         resetInactivityTimers(ws);
+        resetMaxConnectionTimer(ws);
+        this.logger.info('Connection established with the Pilot.');
       },
 
       // Connection closed handler
-      async onClose(_event: CloseEvent, ws: WebSocket) {
-        console.log('Tower: Connection closed.');
+      onClose: (_event: CloseEvent) => {
+        this.logger.info('Connection closed, executing safe cleanup.', { sessionId });
         clearTimers();
-        await dispatcher.handleDisconnect();
+        
+        c.executionCtx.waitUntil(
+          dispatcher.handleDisconnect().catch((error: unknown) => {
+            this.logger.error('Error during disconnect cleanup', { error: String(error) });
+          })
+        );
       },
     };
   }

@@ -1,55 +1,102 @@
-import { StoragePort, MultipartUpload, UploadedPart } from '../ports';
+import { Logger } from '@/utils'
+
+import type { StoragePort } from '../ports';
 
 export class VideoService {
-  private upload: MultipartUpload | null = null;
-  private uploadedParts: UploadedPart[] = [];
-  private _isUploading = false;
+  private readonly logger = new Logger('VideoService');
 
-  constructor(private readonly storagePort: StoragePort) {}
+  private sessionId!: string;
+  private startTimeMs = 0;
+  private lastChunkTimeMs = 0;
+  private vttContent = "WEBVTT\n\n";
+  private segments: string[] = [];
+  private _isUploading = false;
+  private pendingUploads: Promise<void>[] = [];
+
+  constructor(
+    private readonly storagePort: StoragePort
+  ) {}
 
   get isUploading() {
     return this._isUploading;
   }
 
-  async startUpload(fileName: string, mimeType: string): Promise<string> {
-    if (this._isUploading) throw new Error('Upload already in progress');
+  async initializeStream(sessionId: string): Promise<void> {
+    if (this._isUploading) throw new Error('Stream already in progress');
     
-    const uploadKey = `videos/${Date.now()}-${fileName}`;
-    this.upload = await this.storagePort.createMultipartUpload(uploadKey, mimeType);
-    this.uploadedParts = [];
+    this.sessionId = sessionId;
+    this.startTimeMs = Date.now();
+    this.lastChunkTimeMs = this.startTimeMs;
+    this.vttContent = "WEBVTT\n\n";
     this._isUploading = true;
+    this.segments = [];
+    this.pendingUploads = [];
     
-    return this.upload.uploadId;
+    await this.updatePlaylist();
+    this.logger.info('HLS stream initialized', { sessionId });
   }
 
-  async processChunk(partNumber: number, chunkData: ArrayBuffer): Promise<void> {
-    if (!this._isUploading || !this.upload) throw new Error('No upload in progress');
+  async uploadPart(clientPartNumber: number, chunkData: Uint8Array): Promise<void> {
+    if (!this._isUploading) throw new Error('Stream not initialized or already completed');
     
-    const part = await this.storagePort.uploadPart(this.upload, partNumber, chunkData);
-    this.uploadedParts.push(part);
+    // Store the segment directly in its native WebM format
+    const segmentName = `segment_${String(clientPartNumber)}.webm`;
+    const key = `${this.sessionId}/video/${segmentName}`;
+
+    const nowMs = Date.now();
+    const startSec = (this.lastChunkTimeMs - this.startTimeMs) / 1000;
+    const endSec = (nowMs - this.startTimeMs) / 1000;
+    this.lastChunkTimeMs = nowMs;
+
+    const formatTime = (sec: number) => {
+      const h = Math.floor(sec / 3600).toString().padStart(2, '0');
+      const m = Math.floor((sec % 3600) / 60).toString().padStart(2, '0');
+      const s = Math.floor(sec % 60).toString().padStart(2, '0');
+      const ms = Math.floor((sec % 1) * 1000).toString().padStart(3, '0');
+      return `${h}:${m}:${s}.${ms}`;
+    };
+
+    const now = new Date(nowMs);
+    const hour = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false });
+    const date = now.toLocaleDateString('en-US', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    
+    this.vttContent += `${formatTime(startSec)} --> ${formatTime(endSec)} line:0 position:100% align:right\n${this.sessionId}\n${hour} ${date}\n\n`;
+
+    this.logger.debug('Uploading segment', { segmentName });
+    const uploadPromise = this.storagePort.upload(key, chunkData, 'video/webm');
+    const vttPromise = this.storagePort.upload(`${this.sessionId}/video/signature.vtt`, this.vttContent, 'text/vtt');
+    
+    this.pendingUploads.push(uploadPromise);
+    this.pendingUploads.push(vttPromise);
+    await uploadPromise;
+
+    this.segments.push(segmentName);
+    await this.updatePlaylist();
   }
 
-  async completeUpload(): Promise<string> {
-    if (!this._isUploading || !this.upload) throw new Error('No active upload to complete');
-    
-    this.uploadedParts.sort((a, b) => a.partNumber - b.partNumber);
-    await this.storagePort.completeMultipartUpload(this.upload, this.uploadedParts);
-    
-    const key = this.upload.key;
-    this.reset();
-    return key;
+  private async updatePlaylist(): Promise<void> {
+    const playlist = {
+      sessionId: this.sessionId,
+      isUploading: this._isUploading,
+      segments: this.segments
+    };
+
+    // Create and replace the manifest with the updated available pieces
+    const key = `${this.sessionId}/video/playlist.json`;
+    await this.storagePort.upload(key, JSON.stringify(playlist), 'application/json');
   }
 
-  async abortUpload(): Promise<void> {
-    if (this._isUploading && this.upload) {
-      await this.storagePort.abortMultipartUpload(this.upload);
-      this.reset();
-    }
-  }
-
-  private reset() {
+  async finishUpload(): Promise<void> {
+    if (!this._isUploading) return;
+    
+    await Promise.all(this.pendingUploads);
     this._isUploading = false;
-    this.upload = null;
-    this.uploadedParts = [];
+
+    await this.updatePlaylist();
+    this.logger.info('Finishing HLS stream', { sessionId: this.sessionId, totalSegments: this.segments.length });
+  }
+
+  async abortPart(): Promise<void> {
+    await this.finishUpload();
   }
 }

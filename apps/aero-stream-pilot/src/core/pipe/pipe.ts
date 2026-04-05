@@ -48,7 +48,7 @@ export class AeroStreamPipe {
                 
                 // set listeners
                 this.ws.addEventListener('open', () => this._onOpen());
-                this.ws.addEventListener('message', (event) => this._onMessage(event, resolve));
+                this.ws.addEventListener('message', (event) => this._onMessage(event.data, resolve));
                 this.ws.addEventListener('error', (error) => this._onError(error, reject));
                 this.ws.addEventListener('close', () => this._onClose());
             } catch (error) {
@@ -153,7 +153,7 @@ function encrypt(data: any, publicKey: any, secretKey: any) {
         secretKey
     );
 
-    return JSON.stringify({ payload: Array.from(encrypted), nonce: Array.from(nonce) });
+    return JSON.stringify({ data: Array.from(encrypted), nonce: Array.from(nonce) });
 }
 
 function decrypt(event: { data: Uint8Array, nonce: Uint8Array }, publicKey: any, secretKey: any) {

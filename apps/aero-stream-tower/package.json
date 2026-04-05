@@ -1,20 +1,36 @@
 {
-  "name": "aero-stream-tower",
-  "type": "module",
-  "scripts": {
-    "dev": "wrangler dev src/index.ts",
-    "deploy": "wrangler deploy --minify",
-    "cf-typegen": "wrangler types --env-interface CloudflareBindings"
-  },
   "dependencies": {
-    "hono": "4.12.8",
-    "tweetnacl": "^1.0.3",
-    "uuid": "^9.0.1"
+    "@aws-sdk/client-s3": "3.1024.0",
+    "@aws-sdk/s3-request-presigner": "3.1024.0",
+    "hono": "4.12.10",
+    "tweetnacl": "1.0.3",
+    "uuid": "13.0.0"
   },
   "devDependencies": {
-    "@types/node": "^25.5.0",
-    "@types/uuid": "^9.0.8",
-    "wrangler": "4.4.0"
+    "@cloudflare/workers-types": "4.20260405.1",
+    "@eslint/eslintrc": "3.3.5",
+    "@eslint/js": "10.0.1",
+    "@types/node": "25.5.2",
+    "@types/uuid": "11.0.0",
+    "eslint": "10.2.0",
+    "eslint-config-prettier": "10.1.8",
+    "eslint-plugin-import": "2.32.0",
+    "eslint-plugin-simple-import-sort": "12.1.1",
+    "typescript": "6.0.2",
+    "typescript-eslint": "8.58.0",
+    "wrangler": "4.80.0"
   },
-  "packageManager": "yarn@4.12.0+sha512.f45ab632439a67f8bc759bf32ead036a1f413287b9042726b7cc4818b7b49e14e9423ba49b18f9e06ea4941c1ad062385b1d8760a8d5091a1a31e5f6219afca8"
+  "name": "aero-stream-tower",
+  "packageManager": "yarn@4.12.0+sha512.f45ab632439a67f8bc759bf32ead036a1f413287b9042726b7cc4818b7b49e14e9423ba49b18f9e06ea4941c1ad062385b1d8760a8d5091a1a31e5f6219afca8",
+  "scripts": {
+    "build": "tsc --noEmit",
+    "cf-typegen": "wrangler types --env-interface CloudflareBindings",
+    "deploy": "../../deploy.sh -n team-time",
+    "deploy:build": "yarn build && yarn deploy",
+    "dev": "wrangler dev",
+    "lint": "eslint .",
+    "start": "wrangler dev --remote",
+    "start:build": "yarn build && wrangler dev --remote"
+  },
+  "type": "module"
 }

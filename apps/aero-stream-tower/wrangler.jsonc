@@ -2,35 +2,21 @@
   "name": "aero-stream-tower",
   "main": "src/index.ts",
   "compatibility_date": "2025-03-20",
+  "compatibility_flags": [
+    "nodejs_compat"
+  ],
+  "r2_buckets": [
+    {
+      "binding": "MEDIA_BUCKET",
+      "bucket_name": "my-bucket"
+    }
+  ],
   "vars": {
+    "ACCOUNT_ID": "YOUR_ACCOUNT_ID",
+    "ACCESS_KEY_ID": "YOUR_ACCESS_KEY_ID",
+    "SECRET_ACCESS_KEY": "YOUR_SECRET_ACCESS_KEY",
+    "BUCKET_NAME": "my-bucket",
+    "ENVIRONMENT": "development",
+    "SECRET_TOKEN_KEY": "YOUR_SECRET_TOKEN_KEY"
   }
-  // "compatibility_flags": [
-  //   "nodejs_compat"
-  // ],
-  // "kv_namespaces": [
-  //   {
-  //     "binding": "MY_KV_NAMESPACE",
-  //     "id": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-  //   }
-  // ],
-  // "r2_buckets": [
-  //   {
-  //     "binding": "MY_BUCKET",
-  //     "bucket_name": "my-bucket"
-  //   }
-  // ],
-  // "d1_databases": [
-  //   {
-  //     "binding": "MY_DB",
-  //     "database_name": "my-database",
-  //     "database_id": ""
-  //   }
-  // ],
-  // "ai": {
-  //   "binding": "AI"
-  // },
-  // "observability": {
-  //   "enabled": true,
-  //   "head_sampling_rate": 1
-  // }
 }

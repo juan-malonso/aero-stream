@@ -1,17 +1,16 @@
 export enum Events {
   // Connection events
-  HANDSHAKE = 'HANDSHAKE',
-  CLOSED = 'CLOSED',
+  handshake = 'HANDSHAKE',
+  closed = 'CLOSED',
 
   // Stream events
-  VIDEO_START = 'VIDEO_START',
-  VIDEO_END = 'VIDEO_END',
+  video = 'VIDEO',
 
-  // Sync events
-  TELEMETRY = 'TELEMETRY',
+  // Metric events
+  metric = 'METRIC',
 }
 
-export type Payload<T extends Events> = {
-  event: T;
-  [any: string]: any;
-} 
+export interface Payload<T extends Events> {
+  type: T;
+  [key: string]: unknown;
+}
