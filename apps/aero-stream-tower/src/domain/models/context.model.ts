@@ -5,8 +5,6 @@ export interface Bindings {
   ['MEDIA_BUCKET']: R2Bucket;
   ['MEDIA_BUCKET_NAME']: string;
 
-  ['ALLOWED_ORIGINS']?: string;
-
   // AWS
   ['ACCOUNT_ID']: string;
   ['ACCESS_KEY_ID']: string;

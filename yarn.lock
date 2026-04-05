@@ -2962,11 +2962,11 @@ __metadata:
 
 "aero-stream-pilot@file:../aero-stream-pilot::locator=aero-stream-pilot-example%40workspace%3Aapps%2Faero-stream-pilot-example":
   version: 1.0.0
-  resolution: "aero-stream-pilot@file:../aero-stream-pilot#../aero-stream-pilot::hash=e29449&locator=aero-stream-pilot-example%40workspace%3Aapps%2Faero-stream-pilot-example"
+  resolution: "aero-stream-pilot@file:../aero-stream-pilot#../aero-stream-pilot::hash=2edb6d&locator=aero-stream-pilot-example%40workspace%3Aapps%2Faero-stream-pilot-example"
   dependencies:
     tweetnacl: "npm:^1.0.3"
     uuid: "npm:^9.0.1"
-  checksum: 10c0/d9cb39a002c0e01bb3a348f2ecb72e778828fbd1b6eb52957f56f00101b61960efa32524b09dbdbe5145eae5599ee817463716cfe1539d09da9ca0e8da6bce72
+  checksum: 10c0/7d29558ad9332f68518f3626cf69c76e2c7f96f6886f6bcbe960980c1d1ef9a9c6dddf2308d55cc25ce40742f71054d3dd3135ecd97eea660dad3c0b906791b5
   languageName: node
   linkType: hard
 

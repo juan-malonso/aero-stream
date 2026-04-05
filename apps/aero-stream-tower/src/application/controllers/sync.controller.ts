@@ -1,6 +1,6 @@
 import { INACTIVITY_TIMEOUT_MS, MAX_CONNECTION_TIME_MS } from '@/constants';
 import { 
-  type Context,
+  type AppContext,
   Events,
   type Payload,
   type StoragePort,
@@ -22,7 +22,7 @@ export class SyncController {
 
   constructor(private readonly storageAdapter: StoragePort) {}
 
-  handleWebSocket(c: Context) {
+  handleWebSocket(c: AppContext) {
     // Initialize services
     const storageAdapter = this.storageAdapter;
     const videoService = new VideoService(storageAdapter);
@@ -122,7 +122,7 @@ export class SyncController {
 
     // Handles the initial handshake and key exchange
     const handshakeMessage = async (event: { data: Uint8Array, nonce: Uint8Array }, ws: WsConnection) => {
-      const secretBytes = new TextEncoder().encode(String(c.get('secretToken')));
+      const secretBytes = new TextEncoder().encode(c.get('secretToken'));
       const secretKey = new Uint8Array(32);
       secretKey.set(secretBytes.slice(0, 32));
       
