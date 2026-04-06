@@ -69,7 +69,7 @@ export class AeroStreamVideo {
         this.events[event].forEach(listener => { listener(...args); });
     }
 
-    getLiveStream(): MediaStream | null {
+    getLiveStream(): MediaStream {
         return this.mediaStream.clone();
     }
 

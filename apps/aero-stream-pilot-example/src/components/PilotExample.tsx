@@ -1,12 +1,14 @@
 'use client';
 
+import { ConnectionStatus } from '@/constants';
+
 import { LiveViewer, PerformanceStats, VideoHistory } from './developer';
 import { PilotConnection } from './implement';
 
 import { useCallback,useState } from 'react';
 
 export function PilotExample() {
-  const [status, setStatus] = useState('Disconnected');
+  const [status, setStatus] = useState(ConnectionStatus.closed);
   const [sessionId, setSessionId] = useState<string | null>(null);
   const [videoHistory, setVideoHistory] = useState<{ id: string, date: string }[]>([]);
   const [connectionTime, setConnectionTime] = useState(0);

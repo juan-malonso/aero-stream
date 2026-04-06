@@ -1,5 +1,7 @@
 'use client';
 
+import { ConnectionStatus } from '@/constants';
+
 import { useEffect, useState } from 'react';
 
 function usePerformanceMetrics() {
@@ -35,13 +37,13 @@ function usePerformanceMetrics() {
   return { fps, memoryUsage };
 }
 
-export function PerformanceStats({ status, connectionTime }: { status: string; connectionTime: number }) {
+export function PerformanceStats({ status, connectionTime }: { status: ConnectionStatus; connectionTime: number }) {
   const { fps, memoryUsage } = usePerformanceMetrics();
   const formatTime = (seconds: number) => `${Math.floor(seconds / 60).toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`;
 
   return (
     <div style={{ marginBottom: 15, fontWeight: 'bold', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-      <span style={{ color: status === 'Connected' ? 'green' : status === 'Disconnected' ? 'orange' : 'gray' }}>Status: {status}</span>
+      <span style={{ color: status === ConnectionStatus.active ? 'green' : status === ConnectionStatus.error ? 'orange' : 'gray' }}>Status: {status}</span>
       <span style={{ fontSize: '0.9em', color: '#444' }}>Time: {formatTime(connectionTime)}</span>
       <span style={{ fontSize: '0.9em', color: '#444' }}>FPS: {fps}</span>
       <span style={{ fontSize: '0.9em', color: '#444' }}>Mem: {memoryUsage}</span>

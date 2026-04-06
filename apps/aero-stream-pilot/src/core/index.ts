@@ -1,6 +1,7 @@
 import { AeroStreamPipe } from './pipe/pipe.js';
 import { AeroStreamVideo } from './video/video.js';
 
+
 export interface AeroStreamPilotOptions {
     url: string;
     secret: string;
@@ -11,8 +12,8 @@ export interface AeroStreamPilotOptions {
 }
 
 export class AeroStreamPilot {
-    private pipe: AeroStreamPipe;
-    private video: AeroStreamVideo;
+    readonly #pipe: AeroStreamPipe;
+    readonly #video: AeroStreamVideo;
     
     constructor({ 
         url, 
@@ -22,40 +23,40 @@ export class AeroStreamPilot {
         onMessage = () => { /* noop */ }, 
         onClose = () => { /* noop */ },
     }: AeroStreamPilotOptions) {
-        this.pipe = new AeroStreamPipe({
+        this.#pipe = new AeroStreamPipe({
             url,
             secret,
             workflowId,
             onMessage,
             onClose,
         });
-        
-        this.video = new AeroStreamVideo(this.pipe, videoStream);
+
+        this.#video = new AeroStreamVideo(this.#pipe, videoStream);
     }
 
     async connect(): Promise<boolean> {
-        const connected = await this.pipe.connect();
+        const connected = await this.#pipe.connect();
         if (connected) {
-            this.video.start();
+            this.#video.start();
         }
 
         return connected;
     }
 
-    public sendMessage(data: object) {
-        this.pipe.send(data);
+    public send(data: object) {
+        this.#pipe.send(data);
     }
 
     public disconnect() {
-        this.video.stop();
-        this.pipe.close();
+        this.#video.stop();
+        this.#pipe.close();
     }
 
     public get isConnected(): boolean {
-        return this.pipe.isConnected;
+        return this.#pipe.isConnected;
     }
 
-    public getLiveStream(): MediaStream | null {
-        return this.video.getLiveStream();
+    public stream(): MediaStream {
+        return this.#video.getLiveStream();
     }
 }
