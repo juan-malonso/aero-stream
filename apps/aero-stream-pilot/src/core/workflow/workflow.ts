@@ -1,3 +1,4 @@
+import { Logger } from "../../utils/logger.js";
 import { PipeMessageType, type StepRenderMessage } from "../model.js";
 import type { AeroStreamPipe } from "../pipe/pipe.js";
 
@@ -17,6 +18,8 @@ export type StepLibrary<TComponent = unknown> =
     Record<string, StepComponent<TComponent>>;
 
 export class AeroStreamWorkflow<TComponent = unknown> {
+    private logger = new Logger(AeroStreamWorkflow.name);
+    
     private pipe: AeroStreamPipe;
 
     public state: StepState | null = null;
@@ -32,6 +35,8 @@ export class AeroStreamWorkflow<TComponent = unknown> {
         this.pipe = pipe;
         this.library = library;
         this.renderer = renderer;
+
+        this.logger.debug('Library keys', { keys: Object.keys(this.library) });
     }
 
     public stepRender(message: StepRenderMessage) {
@@ -42,7 +47,7 @@ export class AeroStreamWorkflow<TComponent = unknown> {
         };
         
         if (!Object.hasOwn(this.library, this.state.stepId)) {
-            console.error(`Component ${this.state.name} not found in library`);
+            console.error(`Component ${this.state.name} [${this.state.stepId}] not found in library`);
             return null;
         }
 

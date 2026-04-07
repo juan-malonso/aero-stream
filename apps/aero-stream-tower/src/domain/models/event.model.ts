@@ -8,6 +8,11 @@ export enum Events {
 
   // Metric events
   metric = 'METRIC',
+
+  // Step events
+  stepSubmit = 'STEP_SUBMIT',
+  stepRender = 'STEP_RENDER',
+  stepReject = 'STEP_REJECT',
 }
 
 export interface Payload<T extends Events> {

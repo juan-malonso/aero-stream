@@ -4,7 +4,8 @@ import { type Context, Hono } from 'hono';
 export interface Bindings {
   ['MEDIA_BUCKET']: R2Bucket;
   ['MEDIA_BUCKET_NAME']: string;
-
+  ['STATE_MACHINE']: DurableObjectNamespace;
+  
   // AWS
   ['ACCOUNT_ID']: string;
   ['ACCESS_KEY_ID']: string;

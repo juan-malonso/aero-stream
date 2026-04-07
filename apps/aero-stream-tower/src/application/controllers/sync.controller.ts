@@ -11,6 +11,7 @@ import { Logger } from '@/utils';
 
 import nacl from 'tweetnacl';
 import { v4 as uuidv4 } from 'uuid';
+import { SessionController } from './session.controller';
 
 export interface EncryptedPayload {
   data: Iterable<number>;
@@ -27,13 +28,19 @@ export class SyncController {
     const storageAdapter = this.storageAdapter;
     const videoService = new VideoService(storageAdapter);
 
-    // Initialize dispatcher
-    const dispatcher = new WebSocketDispatcherUseCase(videoService);
-
     // Encryption keys for the current session
     let connected = false;
     let pilotPublicKey: Uint8Array | null = null;
     const sessionId: string = uuidv4();
+
+    // Initialize dispatcher
+    const sessionController = new SessionController(c);
+    const dispatcher = new WebSocketDispatcherUseCase(videoService, {
+      submitStep: (payload) => sessionController.submitStep(sessionId, payload),
+      rejectStep: (payload) => sessionController.rejectStep(sessionId, payload),
+      encryptMessage: (data) => encryptMessage(data)
+    });
+
     const keyPair = nacl.box.keyPair();
     const towerPublicKey = keyPair.publicKey;
     const towerPrivateKey = keyPair.secretKey;
@@ -158,6 +165,12 @@ export class SyncController {
       this.logger.info('New session started', { sessionId });
       
       await storageAdapter.upload(`${sessionId}/general`, JSON.stringify({ createAt: new Date().toISOString() }));
+
+      // Fetch initial step
+      const initData = await sessionController.init(sessionId);
+      if (initData) {
+        ws.send(encryptMessage({ type: Events.stepRender, data: initData as object }));
+      }
     }
 
     // ============================================== WEBSOCKET EVENT HANDLERS =

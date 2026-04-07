@@ -2984,14 +2984,14 @@ __metadata:
 
 "aero-stream-pilot@file:../aero-stream-pilot::locator=aero-stream-pilot-example%40workspace%3Aapps%2Faero-stream-pilot-example":
   version: 1.0.0
-  resolution: "aero-stream-pilot@file:../aero-stream-pilot#../aero-stream-pilot::hash=60b14b&locator=aero-stream-pilot-example%40workspace%3Aapps%2Faero-stream-pilot-example"
+  resolution: "aero-stream-pilot@file:../aero-stream-pilot#../aero-stream-pilot::hash=d26ae1&locator=aero-stream-pilot-example%40workspace%3Aapps%2Faero-stream-pilot-example"
   dependencies:
     tweetnacl: "npm:^1.0.3"
     uuid: "npm:^9.0.1"
   peerDependencies:
     react: "*"
     react-dom: "*"
-  checksum: 10c0/5a71e2cc3d39fe8296b69506dcba4f60becf6f8a253b0edcf04ec1ecf56bb9f745f7102fb1eaf08bb6bdd1f9b241ac20b073f1ec12052a207d7e8dd2ad5e61e0
+  checksum: 10c0/14fec0590d2f1edcab87c2df74c796feb16c761176d8d2151441c4d23ac83456326f996580c9a5f788629f0d4c98fb291e0a3ea6e55e1aa39eeae47c75d93931
   languageName: node
   linkType: hard
 

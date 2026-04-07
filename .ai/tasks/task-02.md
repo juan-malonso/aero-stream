@@ -12,7 +12,7 @@ Implementar el Durable Object que funcionará como la Máquina de Estado. Manten
 
 ## Criterios de Aceptación
 - [x] El binding del Durable Object está configurado en `wrangler.jsonc`.
-- [x] La clase `StateMachineInstance` persiste y recupera `currentStepId` desde `this.ctx.storage`.
+- [x] La clase `StateMachineInstance` persiste y recupera `stepId` desde `this.ctx.storage`.
 - [x] Implementa un método para recibir eventos de "paso" y procesar transiciones consultando la base de datos D1.
 
 ## Notas del Agente

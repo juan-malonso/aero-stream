@@ -68,4 +68,5 @@ app.get('/app/sync', upgradeWebSocket((c: AppContext) => {
   return syncController.handleWebSocket(c);
 }));
 
+export { StateMachineInstance, StepProcessorWorkflow } from './domain';
 export default app;
