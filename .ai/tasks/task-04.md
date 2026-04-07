@@ -1,6 +1,6 @@
 # Task 04: Enrutamiento Selectivo en WebSocket (.ai/tasks/task-04.md)
 
-**Status:** `[TODO]`
+**Status:** `[DONE]`
 **Task ID:** `task-04`
 **Title:** Derivar selectivamente eventos de steps desde el WebSocket
 
@@ -11,9 +11,12 @@ El controlador de sincronización actual en Tower (`SyncController`) maneja el W
 - Archivo: `apps/aero-stream-tower/src/application/controllers/sync.controller.ts` u otro manejador de WS.
 
 ## Criterios de Aceptación
-- [ ] El handler de mensajes WebSocket identifica el tipo de mensaje.
-- [ ] Si es un evento de steps, se envía al Stub del `StateMachineInstance` del usuario.
-- [ ] Otros eventos siguen su flujo normal sin afectar el State Machine.
+- [x] El handler de mensajes WebSocket identifica el tipo de mensaje.
+- [x] Si es un evento de steps, se envía al Stub del `StateMachineInstance` del usuario.
+- [x] Otros eventos siguen su flujo normal sin afectar el State Machine.
 
 ## Notas del Agente
-[El agente llenará esto cuando asuma la tarea]
+- Se modificó `event.model.ts` para agregar `Events.step_action` y `Events.step_render`.
+- Se actualizó `AppContext` y `Bindings` para incluir `STATE_MACHINE`.
+- Se enrutó `step_action` al Stub del Durable Object en `sync.controller.ts`.
+- Se solicitó y envió el paso inicial desde `state-machine` en el handler de `handshakeMessage`.

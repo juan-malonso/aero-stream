@@ -1,6 +1,6 @@
 # Task 07: Componentes Mock en Example (.ai/tasks/task-07.md)
 
-**Status:** `[TODO]`
+**Status:** `[DONE]`
 **Task ID:** `task-07`
 **Title:** Definir componentes visuales mock en Example
 
@@ -11,8 +11,10 @@ Crear componentes React simples en la aplicación `aero-stream-pilot-example` qu
 - Directorio: `apps/aero-stream-pilot-example/src/components/steps/`
 
 ## Criterios de Aceptación
-- [ ] Se crean al menos dos componentes (ej. `WelcomeStep`, `KYCStep`).
-- [ ] Ambos componentes aceptan una propiedad (inyectada por Pilot) para enviar su resultado, ej. `props.onSubmit(data)`.
+- [x] Se crean al menos dos componentes (ej. `WelcomeStep`, `KYCStep`).
+- [x] Ambos componentes aceptan una propiedad (inyectada por Pilot) para enviar su resultado, ej. `props.onSubmit(data)`.
 
 ## Notas del Agente
-[El agente llenará esto cuando asuma la tarea]
+- Se crearon los componentes `WelcomeStep`, `KYCStep` y `DoneStep`.
+- Se exportaron en `src/components/steps/index.ts`.
+- Reciben `commit` desde las props (inyectadas por `PilotWorkflow`) y llaman a `commit('NEXT')` y `commit('SUBMIT', { name })` respectivamente.

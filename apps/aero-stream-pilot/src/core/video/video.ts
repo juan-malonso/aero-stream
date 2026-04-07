@@ -1,3 +1,4 @@
+import { PipeMessageType } from "../model.js";
 import type { AeroStreamPipe } from "../pipe/pipe.js";
 
 type EventListener = (...args: unknown[]) => void;
@@ -38,7 +39,7 @@ export class AeroStreamVideo {
 
                     // Send the structured object
                     pipe.send({ 
-                        type: 'VIDEO',
+                        type: PipeMessageType.videoEmit,
                         chunk: btoa(binaryString),
                     });
                 } catch (error) {

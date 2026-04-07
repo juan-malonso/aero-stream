@@ -1,6 +1,6 @@
 # Task 05: Crear Módulo `workflow` en Pilot (.ai/tasks/task-05.md)
 
-**Status:** `[TODO]`
+**Status:** `[DONE]`
 **Task ID:** `task-05`
 **Title:** Crear módulo workflow/steps en Pilot
 
@@ -11,10 +11,12 @@ Añadir un nuevo módulo en la librería `aero-stream-pilot` (similar al de `vid
 - Directorio: `apps/aero-stream-pilot/src/core/workflow/`
 
 ## Criterios de Aceptación
-- [ ] Se crea la clase `WorkflowManager` o similar que procesa mensajes `RENDER_STEP`.
-- [ ] Mantiene un registro interno del paso actual.
-- [ ] Se expone un método para registrar la librería de componentes (`stepLibrary`).
-- [ ] Expone eventos de cambio de estado para que React pueda actualizarse.
+- [x] Se crea la clase `WorkflowManager` o similar que procesa mensajes `RENDER_STEP`.
+- [x] Mantiene un registro interno del paso actual.
+- [x] Se expone un método para registrar la librería de componentes (`stepLibrary`).
+- [x] Expone eventos de cambio de estado para que React pueda actualizarse.
 
 ## Notas del Agente
-[El agente llenará esto cuando asuma la tarea]
+- Se creó `AeroStreamWorkflow` en `src/core/workflow/workflow.ts` para manejar el estado del paso, procesar mensajes de render y emitir eventos `change`.
+- Se integró `AeroStreamWorkflow` dentro de `AeroStreamPilot`, el cual intercepta mensajes con `type === 'STEP_RENDER'` para actualizar el estado del workflow.
+- Se agregaron las exportaciones correspondientes.

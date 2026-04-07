@@ -7,6 +7,8 @@
     "@eslint/eslintrc": "3.3.5",
     "@eslint/js": "10.0.1",
     "@types/node": "^25.5.0",
+    "@types/react": "^19.2.14",
+    "@types/react-dom": "^19.2.3",
     "@types/uuid": "^9.0.8",
     "eslint": "10.2.0",
     "eslint-config-prettier": "10.1.8",
@@ -37,5 +39,9 @@
   },
   "type": "module",
   "types": "./dist/index.d.ts",
-  "version": "1.0.0"
+  "version": "1.0.0",
+  "peerDependencies": {
+    "react": "*",
+    "react-dom": "*"
+  }
 }
