@@ -2,13 +2,21 @@
 
 import { ConnectionStatus } from '@/constants';
 
-import { AeroStreamPilot } from 'aero-stream-pilot';
+import { DoneComponent, KYCComponent, WelcomeComponent } from '../steps';
+
+import { type AeroStreamLibrary, AeroStreamPilot } from 'aero-stream-pilot';
 import { useEffect, useRef, useState } from 'react';
+
+
+const stepLibrary: AeroStreamLibrary<React.ReactNode> = {
+  WelcomeComponent,
+  KYCComponent,
+  DoneComponent,
+};
 
 const token = 'my-super-secret-token';
 const workflowId = 'default-workflow-id';
 const socketUrl = 'ws://localhost:8787/app/sync';
-
 
 interface PilotConnectionProps {
   onSessionId: (id: string | null) => void;
@@ -22,6 +30,7 @@ export function PilotConnection({ onSessionId, onStatusChange, onTimeTick, onTim
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const [status, setStatus] = useState(ConnectionStatus.closed);
+  const [currentComponent, setCurrentComponent] = useState<React.ReactNode | null>(null);
 
   useEffect(() => {
     onStatusChange(status);
@@ -36,11 +45,13 @@ export function PilotConnection({ onSessionId, onStatusChange, onTimeTick, onTim
 
       const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
 
-      pilotRef.current = new AeroStreamPilot({ 
-        url: socketUrl, 
+      pilotRef.current = new AeroStreamPilot<React.ReactNode>({
+        url: socketUrl,
         secret: token,
         workflowId,
         videoStream: stream,
+        library: stepLibrary,
+        renderer: setCurrentComponent,
         onMessage: (message: unknown) => {
           const msgSessionId = (message as { sessionId?: string }).sessionId;
           if (msgSessionId) {
@@ -49,17 +60,13 @@ export function PilotConnection({ onSessionId, onStatusChange, onTimeTick, onTim
         },
         onClose: () => {
           handleDisconnect();
-        },
+        }
       });
-      
+
       await pilotRef.current.connect();
 
       if (videoRef.current) {
         videoRef.current.srcObject = pilotRef.current.stream();
-        console.log({
-          pilot: pilotRef.current,
-          keys: Object.keys(pilotRef.current),
-        })
       }
 
       if (pilotRef.current.isConnected) {
@@ -89,6 +96,7 @@ export function PilotConnection({ onSessionId, onStatusChange, onTimeTick, onTim
       videoRef.current.srcObject = null;
     }
 
+    setCurrentComponent(null);
     setStatus(ConnectionStatus.closed);
     onSessionId(null);
   };
@@ -103,8 +111,17 @@ export function PilotConnection({ onSessionId, onStatusChange, onTimeTick, onTim
 
   return (
     <div style={{ marginTop: 20 }}>
-      <h3 style={{ marginTop: 0 }}>Camera Capture:</h3>
-      <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', background: '#000', borderRadius: '8px' }} />
+      <h3 style={{ marginTop: 0 }}>Pilot Flow:</h3>
+      
+      <div style={{ display: 'flex', gap: '20px', width: '100%' }}>
+          <div style={{ flex: 1, minWidth: 0 }}>
+              <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', background: '#000', borderRadius: '8px' }} />
+          </div>
+          <div style={{ flex: 1, minWidth: 0 }}>
+              {currentComponent ?? null}
+          </div>
+      </div>
+
       <div style={{ display: 'flex', gap: '10px', marginTop: 15 }}>
         <button 
           onClick={() => { void handleConnect(); }} 

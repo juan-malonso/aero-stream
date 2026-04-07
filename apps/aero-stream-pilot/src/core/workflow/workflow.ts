@@ -11,7 +11,7 @@ export type StepSubmitFn = (data?: unknown) => void;
 export type StepRejectFn = (data?: unknown) => void;
 
 export type StepComponent<TComponent = unknown> = 
-    (config: Record<string, unknown>, submit: StepSubmitFn, reject: StepRejectFn) => TComponent;
+    (config: unknown, submit: StepSubmitFn, reject: StepRejectFn) => TComponent;
 
 export type StepLibrary<TComponent = unknown> = 
     Record<string, StepComponent<TComponent>>;

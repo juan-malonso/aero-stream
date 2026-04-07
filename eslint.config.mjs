@@ -70,7 +70,7 @@ export default tseslint.config(
         },
         {
           selector: 'default',
-          format: ['camelCase'],
+          format: ['camelCase', 'PascalCase'],
           leadingUnderscore: 'allow'
         },
         {
