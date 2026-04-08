@@ -21,7 +21,7 @@ export type StepRejectMessage = PipeMessage<PipeMessageType.stepReject, object>;
 
 export type StepRenderMessage = PipeMessage<PipeMessageType.stepRender, {
   stepId: string;
-  componentName: string;
+  type: string;
   props: Record<string, unknown>;
 }>;
 

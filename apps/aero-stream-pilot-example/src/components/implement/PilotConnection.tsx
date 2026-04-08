@@ -2,7 +2,7 @@
 
 import { ConnectionStatus } from '@/constants';
 
-import { DoneComponent, KYCComponent, WelcomeComponent } from '../steps';
+import { DoneComponent, KYCComponent, VideoComponent, WelcomeComponent } from '../steps';
 
 import { type AeroStreamLibrary, AeroStreamPilot } from 'aero-stream-pilot';
 import { useEffect, useRef, useState } from 'react';
@@ -22,11 +22,11 @@ interface PilotConnectionProps {
 export function PilotConnection({ onSessionId, onStatusChange, onTimeTick, onTimeReset }: PilotConnectionProps) {
   const stepLibrary: AeroStreamLibrary<React.ReactNode> = {
     WelcomeComponent,
+    VideoComponent,
     KYCComponent,
     DoneComponent,
   };
 
-  const videoRef = useRef<HTMLVideoElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const [status, setStatus] = useState(ConnectionStatus.closed);
@@ -65,10 +65,6 @@ export function PilotConnection({ onSessionId, onStatusChange, onTimeTick, onTim
 
       await pilotRef.current.connect();
 
-      if (videoRef.current) {
-        videoRef.current.srcObject = pilotRef.current.stream();
-      }
-
       if (pilotRef.current.isConnected) {
         setStatus(ConnectionStatus.active);
 
@@ -92,10 +88,6 @@ export function PilotConnection({ onSessionId, onStatusChange, onTimeTick, onTim
       pilotRef.current = null;
     }
 
-    if (videoRef.current) {
-      videoRef.current.srcObject = null;
-    }
-
     setCurrentComponent(null);
     setStatus(ConnectionStatus.closed);
     onSessionId(null);
@@ -113,13 +105,21 @@ export function PilotConnection({ onSessionId, onStatusChange, onTimeTick, onTim
     <div style={{ marginTop: 20 }}>
       <h3 style={{ marginTop: 0 }}>Pilot Flow:</h3>
       
-      <div style={{ display: 'flex', gap: '20px', width: '100%' }}>
-          <div style={{ flex: 1, minWidth: 0 }}>
-              <video ref={videoRef} autoPlay playsInline muted style={{ width: '100%', background: '#000', borderRadius: '8px' }} />
+      <div style={{ 
+        width: '100%', 
+        aspectRatio: '16/9', 
+        backgroundColor: '#f9fafb', 
+        border: '1px solid #e5e7eb', 
+        borderRadius: '8px', 
+        overflowY: 'auto',
+        display: 'flex',
+        flexDirection: 'column'
+      }}>
+        {currentComponent ?? (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#9ca3af' }}>
+            Flow disconnected. Click Connect to start.
           </div>
-          <div style={{ flex: 1, minWidth: 0 }}>
-              {currentComponent ?? null}
-          </div>
+        )}
       </div>
 
       <div style={{ display: 'flex', gap: '10px', marginTop: 15 }}>

@@ -10,13 +10,15 @@ interface KYCStepProps {
   commit: (data?: unknown) => void;
 }
 
-const KYCStep: React.FC<KYCStepProps> = ({ data: { title }, commit }) => {
+const KYCStep: React.FC<KYCStepProps> = ({ data, commit }) => {
   const [name, setName] = useState('');
 
   return (
     <div style={{ padding: '2rem', textAlign: 'center', backgroundColor: '#fff0f0', borderRadius: '8px' }}>
-      <h2>{title}</h2>
+      <h2>{data?.title || 'KYC Step'}</h2>
       <p>Please enter your full name for verification.</p>
+
+
       <div style={{ margin: '20px 0' }}>
         <input 
           type="text" 
@@ -37,14 +39,14 @@ const KYCStep: React.FC<KYCStepProps> = ({ data: { title }, commit }) => {
   );
 };
 
-export const KYCComponent: AeroStreamComponent<React.ReactNode> = (
-  config, 
-  submit: (data: unknown) => void,
-  _reject: (error: unknown) => void
-) => {
-  const commit = (data: unknown = {}) => {
-    console.log('KYCComponent commit called:', { data });
-    submit(data);
+export const KYCComponent: AeroStreamComponent<React.ReactNode> = ({
+  data, 
+  submit,
+  reject
+}) => {
+  const commit = (payload: unknown = {}) => {
+    console.log('KYCComponent commit called:', { data: payload });
+    submit(payload);
   };
-  return <KYCStep data={config as StepProps} commit={commit} />;
+  return <KYCStep data={data as StepProps} commit={commit} />;
 }

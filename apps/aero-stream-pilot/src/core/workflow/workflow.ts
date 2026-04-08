@@ -1,18 +1,26 @@
 import { Logger } from "../../utils/logger.js";
 import { PipeMessageType, type StepRenderMessage } from "../model.js";
 import type { AeroStreamPipe } from "../pipe/pipe.js";
+import { AeroStreamVideo } from "../video/video.js";
 
 export interface StepState {
     stepId: string;
-    name: string;
+    type: string;
     props: Record<string, unknown>;
 }
 
 export type StepSubmitFn = (data?: unknown) => void;
 export type StepRejectFn = (data?: unknown) => void;
 
+export interface StepComponentParams {
+    data: unknown;
+    stream: () => MediaStream;
+    submit: StepSubmitFn;
+    reject: StepRejectFn;
+}
+
 export type StepComponent<TComponent = unknown> = 
-    (config: unknown, submit: StepSubmitFn, reject: StepRejectFn) => TComponent;
+    (params: StepComponentParams) => TComponent;
 
 export type StepLibrary<TComponent = unknown> = 
     Record<string, StepComponent<TComponent>>;
@@ -20,7 +28,8 @@ export type StepLibrary<TComponent = unknown> =
 export class AeroStreamWorkflow<TComponent = unknown> {
     private logger = new Logger(AeroStreamWorkflow.name);
     
-    private pipe: AeroStreamPipe;
+    readonly #pipe: AeroStreamPipe;
+    readonly #video: AeroStreamVideo;
 
     public state: StepState | null = null;
 
@@ -29,10 +38,12 @@ export class AeroStreamWorkflow<TComponent = unknown> {
 
     constructor(
         pipe: AeroStreamPipe, 
+        video: AeroStreamVideo,
         library: StepLibrary<TComponent> = {},
-        renderer: (component: TComponent) => void
+        renderer: (component: TComponent) => void,
     ) {
-        this.pipe = pipe;
+        this.#pipe = pipe;
+        this.#video = video;
         this.library = library;
         this.renderer = renderer;
 
@@ -42,27 +53,28 @@ export class AeroStreamWorkflow<TComponent = unknown> {
     public stepRender(message: StepRenderMessage) {
         this.state = {
             stepId: message.data.stepId,
-            name: message.data.componentName,
+            type: message.data.type,
             props: message.data.props,
         };
         
-        if (!Object.hasOwn(this.library, this.state.stepId)) {
-            console.error(`Component ${this.state.name} [${this.state.stepId}] not found in library`);
+        if (!Object.hasOwn(this.library, this.state.type)) {
+            console.error(`Component ${this.state.type} [${this.state.stepId}] not found in library`);
             return null;
         }
 
-        const renderFn = this.library[this.state.stepId];
+        const renderFn = this.library[this.state.type];
 
         this.renderer(
-            renderFn(
-                this.state.props,
-                (data) => { this.commit(PipeMessageType.stepSubmit, data); },
-                (data) => { this.commit(PipeMessageType.stepReject, data); }
-            )
+            renderFn({
+                data: this.state.props,
+                stream: () => this.#video.getLiveStream(),
+                submit: (data) => { this.commit(PipeMessageType.stepSubmit, data); },
+                reject: (data) => { this.commit(PipeMessageType.stepReject, data); }
+            })
         );
     }
 
     public commit(type: string, data?: unknown) {
-        this.pipe.send({ type, data });
+        this.#pipe.send({ type, data });
     }
 }

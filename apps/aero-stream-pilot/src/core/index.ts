@@ -54,7 +54,7 @@ export class AeroStreamPilot<TComponent = unknown> {
         });
 
         this.#video = new AeroStreamVideo(this.#pipe, videoStream);
-        this.#workflow = new AeroStreamWorkflow<TComponent>(this.#pipe, library, renderer);
+        this.#workflow = new AeroStreamWorkflow<TComponent>(this.#pipe, this.#video, library, renderer);
     }
 
     async connect(): Promise<boolean> {

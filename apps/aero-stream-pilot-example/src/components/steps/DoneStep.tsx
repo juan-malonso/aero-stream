@@ -10,11 +10,13 @@ interface DoneStepProps {
   commit: (data?: unknown) => void;
 }
 
-const DoneStep: React.FC<DoneStepProps> = ({ data: { title }, commit }) => {
+const DoneStep: React.FC<DoneStepProps> = ({ data, commit }) => {
   return (
     <div style={{ padding: '2rem', textAlign: 'center', backgroundColor: '#f0fff0', borderRadius: '8px' }}>
-      <h2>{title}</h2>
+      <h2>{data?.title || 'Done'}</h2>
       <p>Your workflow has completed successfully.</p>
+
+
       <button 
         onClick={() => { commit(); }}
         style={{ padding: '10px 20px', fontSize: '16px', cursor: 'pointer', marginTop: '20px' }}
@@ -25,14 +27,14 @@ const DoneStep: React.FC<DoneStepProps> = ({ data: { title }, commit }) => {
   );
 };
 
-export const DoneComponent: AeroStreamComponent<React.ReactNode> = (
-  config, 
-  submit: (data: unknown) => void,
-  _reject: (error: unknown) => void
-) => {
-  const commit = (data: unknown = {}) => {
-    console.log('DoneComponent commit called:', { data });
-    submit(data);
+export const DoneComponent: AeroStreamComponent<React.ReactNode> = ({
+  data, 
+  submit,
+  reject
+}) => {
+  const commit = (payload: unknown = {}) => {
+    console.log('DoneComponent commit called:', { data: payload });
+    submit(payload);
   };
-  return <DoneStep data={config as StepProps} commit={commit} />;
+  return <DoneStep data={data as StepProps} commit={commit} />;
 }

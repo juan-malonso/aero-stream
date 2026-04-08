@@ -13,6 +13,13 @@ interface WorkflowRow {
   steps: string; // JSON string
 }
 
+interface StepDefinition {
+  type: string;
+  name: string;
+  props: Record<string, unknown>;
+  transition: { NEXT?: string; };
+}
+
 export class StateMachineInstance extends DurableObject<Env> {
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
@@ -57,12 +64,12 @@ export class StateMachineInstance extends DurableObject<Env> {
       await this.ctx.storage.put('stepId', stepId);
     }
     
-    const stepDef = workflow.steps[stepId as string];
+    const stepDef: StepDefinition = workflow.steps[stepId as string];
     
     return { 
       stepId: stepId as string,
-      componentName: stepDef?.name || 'Unknown',
-      props: stepDef?.props || {}
+      type: stepDef.type,
+      props: stepDef.props
     };
   }
 
@@ -98,12 +105,12 @@ export class StateMachineInstance extends DurableObject<Env> {
 
     await this.ctx.storage.put('stepId', nextStepId);
     
-    const nextStepDef = workflow.steps[nextStepId];
+    const nextStepDef: StepDefinition = workflow.steps[nextStepId];
     
     return { 
       stepId: nextStepId,
-      componentName: nextStepDef?.name || 'Unknown',
-      props: nextStepDef?.props || {}
+      type: nextStepDef.type,
+      props: nextStepDef.props
     };
   }
 

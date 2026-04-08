@@ -52,22 +52,26 @@ export class AeroStreamVideo {
     }
 
     on(event: string, listener: EventListener) {
-        this.events[event] ??= [];
-        this.events[event].push(listener);
+        const listeners = this.events[event];
+        if (listeners !== undefined) {
+            listeners.push(listener);
+        } else {
+            this.events[event] = [listener];
+        }
     }
 
     off(event: string, listener: EventListener) {
-        if (this.events[event] === undefined) {
-            return;
-        }
-        this.events[event] = this.events[event].filter(l => l !== listener);
+        const listeners = this.events[event];
+        if (!listeners) return;
+        
+        this.events[event] = listeners.filter(l => l !== listener);
     }
 
     private emit(event: string, ...args: unknown[]) {
-        if (this.events[event] === undefined) {
-            return;
-        }
-        this.events[event].forEach(listener => { listener(...args); });
+        const listeners = this.events[event];
+        if (!listeners) return;
+        
+        listeners.forEach(listener => { listener(...args); });
     }
 
     getLiveStream(): MediaStream {

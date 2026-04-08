@@ -10,11 +10,13 @@ interface WelcomeStepProps {
   commit: (data?: unknown) => void;
 }
 
-const WelcomeStep: React.FC<WelcomeStepProps> = ({ data: { title }, commit }) => {
+const WelcomeStep: React.FC<WelcomeStepProps> = ({ data, commit }) => {
   return (
     <div style={{ padding: '2rem', textAlign: 'center', backgroundColor: '#f0f4f8', borderRadius: '8px' }}>
-      <h2>{title}</h2>
+      <h2>{data?.title || 'Welcome'}</h2>
       <p>Welcome to the Aero-Stream Pilot flow. Please click below to start.</p>
+
+
       <button 
         onClick={() => { commit(); }}
         style={{ padding: '10px 20px', fontSize: '16px', cursor: 'pointer', marginTop: '20px' }}
@@ -25,14 +27,14 @@ const WelcomeStep: React.FC<WelcomeStepProps> = ({ data: { title }, commit }) =>
   );
 };
 
-export const WelcomeComponent: AeroStreamComponent<React.ReactNode> = (
-  config, 
-  submit: (data: unknown) => void,
-  _reject: (error: unknown) => void
-) => {
-  const commit = (data: unknown = {}) => {
-    console.log('WelcomeComponent commit called:', { data });
-    submit(data);
+export const WelcomeComponent: AeroStreamComponent<React.ReactNode> = ({
+  data, 
+  submit,
+  reject
+}) => {
+  const commit = (payload: unknown = {}) => {
+    console.log('WelcomeComponent commit called:', { data: payload });
+    submit(payload);
   };
-  return <WelcomeStep data={config as StepProps} commit={commit} />;
+  return <WelcomeStep data={data as StepProps} commit={commit} />;
 }
