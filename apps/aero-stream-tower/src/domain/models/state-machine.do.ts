@@ -6,12 +6,11 @@ export interface Env {
   STEP_PROCESSOR: any;
 }
 
-interface WorkflowStepRow {
-  step_id: string;
-  component_name: string;
-  base_props: string; // JSON string
-  transition_logic: string; // JSON string
-  trigger_workflow_name: string | null;
+interface WorkflowRow {
+  id: string;
+  name: string;
+  version: number;
+  steps: string; // JSON string
 }
 
 export class StateMachineInstance extends DurableObject<Env> {
@@ -20,72 +19,96 @@ export class StateMachineInstance extends DurableObject<Env> {
   }
 
   async init() {
-    let stepId = await this.ctx.storage.get<string>('stepId');
+    let workflow = await this.ctx.storage.get<any>('workflow');
     
-    if (!stepId) {
-      const startRow = await this.env.DB.prepare(
-        'SELECT * FROM workflow_steps WHERE step_id = ?'
-      ).bind('StartComponent').first<WorkflowStepRow>();
+    if (!workflow) {
+      const workflowRow = await this.env.DB.prepare(
+        'SELECT * FROM workflows WHERE id = ? ORDER BY version DESC LIMIT 1'
+      ).bind('default-workflow-id').first<WorkflowRow>();
       
-      if (startRow) {
-        const transitionLogic = JSON.parse(startRow.transition_logic);
-        stepId = transitionLogic['NEXT'] || 'StartComponent';
-        await this.ctx.storage.put('stepId', stepId);
-      } else {
-        stepId = 'StartComponent';
+      if (!workflowRow) {
+        throw new Error('Workflow not found in database');
       }
+
+      workflow = {
+        id: workflowRow.id,
+        name: workflowRow.name,
+        version: workflowRow.version,
+        steps: JSON.parse(workflowRow.steps)
+      };
+      
+      await this.ctx.storage.put('workflow', workflow);
+    }
+
+    let stepId = await this.ctx.storage.get<string>('stepId');
+
+    if (!stepId) {
+      // Find the step defined as type: 'Start'
+      const steps = workflow.steps;
+      const startStepId = Object.keys(steps).find(key => steps[key].type === 'Start');
+      
+      if (!startStepId) {
+        throw new Error('No Start type step found in workflow');
+      }
+      
+      const startDef = steps[startStepId];
+      const transitionLogic = startDef.transition || {};
+      stepId = transitionLogic['NEXT'] || startStepId;
+      await this.ctx.storage.put('stepId', stepId);
     }
     
-    const stepRow = await this.env.DB.prepare(
-      'SELECT * FROM workflow_steps WHERE step_id = ?'
-    ).bind(stepId).first<WorkflowStepRow>();
+    const stepDef = workflow.steps[stepId as string];
     
     return { 
-      stepId,
-      componentName: stepRow?.component_name || 'Unknown',
-      props: stepRow ? JSON.parse(stepRow.base_props) : {}
+      stepId: stepId as string,
+      componentName: stepDef?.name || 'Unknown',
+      props: stepDef?.props || {}
     };
   }
 
   async submitStep(payload: any) {
-    const body = payload as { action: string, data?: any };
+    const data = payload;
     
+    const workflow = await this.ctx.storage.get<any>('workflow');
     const stepId = await this.ctx.storage.get<string>('stepId');
-    if (!stepId) throw new Error('State machine not initialized');
     
-    const stepRow = await this.env.DB.prepare(
-      'SELECT * FROM workflow_steps WHERE step_id = ?'
-    ).bind(stepId).first<WorkflowStepRow>();
+    if (!workflow || !stepId) throw new Error('State machine not initialized');
     
-    if (!stepRow) throw new Error('Step not found');
+    const stepDef = workflow.steps[stepId];
+    if (!stepDef) throw new Error('Step not found in workflow definition');
     
-    const transitionLogic = JSON.parse(stepRow.transition_logic);
-    const nextStepId = transitionLogic[body.action];
-    
-    if (!nextStepId) throw new Error('Invalid action');
+    const transitionLogic = stepDef.transition || {};
+    const availableActions = Object.keys(transitionLogic);
 
-    if (stepRow.trigger_workflow_name) {
+    if (workflow.id) { // trigger_workflow_name is now abstracted, assuming we just pass it to processor
       await this.env.STEP_PROCESSOR.create({
         id: `${stepId}-${Date.now()}`,
-        params: { stepId: stepId, action: body.action, data: body.data }
+        params: { stepId: stepId, action: availableActions[0] || 'FINISH', data: data }
       });
     }
-    
+
+    if (availableActions.length === 0) {
+      await this.ctx.storage.deleteAll();
+      return { finished: true };
+    }
+
+    // Automatically pick the first available action for transition
+    const action = availableActions[0];
+    const nextStepId = transitionLogic[action];
+
     await this.ctx.storage.put('stepId', nextStepId);
     
-    const nextStepRow = await this.env.DB.prepare(
-      'SELECT * FROM workflow_steps WHERE step_id = ?'
-    ).bind(nextStepId).first<WorkflowStepRow>();
+    const nextStepDef = workflow.steps[nextStepId];
     
     return { 
       stepId: nextStepId,
-      componentName: nextStepRow?.component_name || 'Unknown',
-      props: nextStepRow ? JSON.parse(nextStepRow.base_props) : {}
+      componentName: nextStepDef?.name || 'Unknown',
+      props: nextStepDef?.props || {}
     };
   }
 
   async rejectStep(_payload: any) {
-    await this.ctx.storage.delete('stepId');
+    await this.ctx.storage.deleteAll();
     return { success: true };
   }
 }

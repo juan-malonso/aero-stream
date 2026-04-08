@@ -7,7 +7,7 @@ interface StepProps {
 
 interface KYCStepProps {
   data: StepProps;
-  commit: (action: string, data?: unknown) => void;
+  commit: (data?: unknown) => void;
 }
 
 const KYCStep: React.FC<KYCStepProps> = ({ data: { title }, commit }) => {
@@ -20,14 +20,14 @@ const KYCStep: React.FC<KYCStepProps> = ({ data: { title }, commit }) => {
       <div style={{ margin: '20px 0' }}>
         <input 
           type="text" 
-          value={name} 
-          onChange={(e) => { setName(e.target.value); }} 
+          value={name}
+          onChange={(e) => { setName(e.target.value); }}
           placeholder="Your full name"
           style={{ padding: '10px', fontSize: '16px', width: '80%' }}
         />
       </div>
       <button 
-        onClick={() => { commit('SUBMIT', { name }); }}
+        onClick={() => { commit({ name }); }}
         disabled={!name}
         style={{ padding: '10px 20px', fontSize: '16px', cursor: 'pointer' }}
       >
@@ -42,9 +42,9 @@ export const KYCComponent: AeroStreamComponent<React.ReactNode> = (
   submit: (data: unknown) => void,
   _reject: (error: unknown) => void
 ) => {
-  const commit = (action: string, data: unknown = {}) => { 
+  const commit = (data: unknown = {}) => {
+    console.log('KYCComponent commit called:', { data });
     submit(data);
   };
-
   return <KYCStep data={config as StepProps} commit={commit} />;
 }

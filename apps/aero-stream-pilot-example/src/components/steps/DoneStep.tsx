@@ -7,7 +7,7 @@ interface StepProps {
 
 interface DoneStepProps {
   data: StepProps;
-  commit: (action: string, data?: unknown) => void;
+  commit: (data?: unknown) => void;
 }
 
 const DoneStep: React.FC<DoneStepProps> = ({ data: { title }, commit }) => {
@@ -16,7 +16,7 @@ const DoneStep: React.FC<DoneStepProps> = ({ data: { title }, commit }) => {
       <h2>{title}</h2>
       <p>Your workflow has completed successfully.</p>
       <button 
-        onClick={() => { commit('NEXT'); }}
+        onClick={() => { commit(); }}
         style={{ padding: '10px 20px', fontSize: '16px', cursor: 'pointer', marginTop: '20px' }}
       >
         Finish
@@ -30,9 +30,9 @@ export const DoneComponent: AeroStreamComponent<React.ReactNode> = (
   submit: (data: unknown) => void,
   _reject: (error: unknown) => void
 ) => {
-  const commit = (action: string, data: unknown = {}) => { 
+  const commit = (data: unknown = {}) => {
+    console.log('DoneComponent commit called:', { data });
     submit(data);
   };
-
   return <DoneStep data={config as StepProps} commit={commit} />;
 }

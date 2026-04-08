@@ -8,12 +8,6 @@ import { type AeroStreamLibrary, AeroStreamPilot } from 'aero-stream-pilot';
 import { useEffect, useRef, useState } from 'react';
 
 
-const stepLibrary: AeroStreamLibrary<React.ReactNode> = {
-  WelcomeComponent,
-  KYCComponent,
-  DoneComponent,
-};
-
 const token = 'my-super-secret-token';
 const workflowId = 'default-workflow-id';
 const socketUrl = 'ws://localhost:8787/app/sync';
@@ -26,6 +20,12 @@ interface PilotConnectionProps {
 }
 
 export function PilotConnection({ onSessionId, onStatusChange, onTimeTick, onTimeReset }: PilotConnectionProps) {
+  const stepLibrary: AeroStreamLibrary<React.ReactNode> = {
+    WelcomeComponent,
+    KYCComponent,
+    DoneComponent,
+  };
+
   const videoRef = useRef<HTMLVideoElement>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 

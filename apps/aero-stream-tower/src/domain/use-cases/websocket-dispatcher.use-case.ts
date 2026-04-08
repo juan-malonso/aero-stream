@@ -29,15 +29,22 @@ export class WebSocketDispatcherUseCase {
   private async handleMessage(message: Payload<Events>, ws: WsConnection) {
     switch (message.type) {
       case Events.stepSubmit:{
-        const smResponse = await this.smContext.submitStep(message);
+        const smResponse = await this.smContext.submitStep(message.data) as any;
+        if (smResponse?.finished) {
+          this.logger.info('Flow finished by reaching end of steps, closing connection');
+          ws.close(1000, 'Flow ended');
+          break;
+        }
+
         if (smResponse) {
           ws.send(this.smContext.encryptMessage({ type: (Events as any).step_render || 'STEP_RENDER', data: smResponse as object }));
         }
+        
         break;
       }
 
       case Events.stepReject: {
-        await this.smContext.rejectStep(message);
+        await this.smContext.rejectStep(message.data);
         this.logger.info('Flow rejected by user, closing connection');
         ws.close(1000, 'Flow ended or rejected');
         break;
