@@ -1,4 +1,6 @@
 import { DurableObject } from 'cloudflare:workers';
+import dlv from 'dlv';
+import jsonLogic from 'json-logic-js';
 
 export interface Env {
   STATE_MACHINE: DurableObjectNamespace;
@@ -10,14 +12,52 @@ interface WorkflowRow {
   id: string;
   name: string;
   version: number;
-  steps: string; // JSON string
+  start: string;
+  steps: string;
+  globals: string;
+}
+
+enum ExecutionMode {
+  FRONT = 'FRONT',
+  BACK = 'BACK'
 }
 
 interface StepDefinition {
-  type: string;
+  execution: {
+    mode: ExecutionMode;
+    type: string;
+  };
   name: string;
-  props: Record<string, unknown>;
-  transition: { NEXT?: string; };
+  config: Record<string, unknown>;
+  transitions: Array<{
+    condition: any;
+    next: string;
+  }>;
+}
+
+function hydrateConfig(config: any, state: any): any {
+  if (typeof config === 'string') {
+    return config.replace(/\{\{([^}]+)\}\}/g, (_, path) => {
+      const value = dlv(state, path.trim(), '');
+      return value;
+    });
+  }
+
+  if (Array.isArray(config)) {
+    return config.map(item => hydrateConfig(item, state));
+  }
+
+  if (config !== null && typeof config === 'object') {
+    const hydratedObj: any = {};
+
+    for (const key in config) {
+      hydratedObj[key] = hydrateConfig(config[key], state);
+    }
+
+    return hydratedObj;
+  }
+
+  return config;
 }
 
 export class StateMachineInstance extends DurableObject<Env> {
@@ -26,7 +66,8 @@ export class StateMachineInstance extends DurableObject<Env> {
   }
 
   async init() {
-    let workflow = await this.ctx.storage.get<any>('workflow');
+    let workflow = await this.ctx.storage.get<WorkflowRow>('workflow');
+    let stepSession = await this.ctx.storage.get<any>('stepSession') || {};
     
     if (!workflow) {
       const workflowRow = await this.env.DB.prepare(
@@ -41,7 +82,9 @@ export class StateMachineInstance extends DurableObject<Env> {
         id: workflowRow.id,
         name: workflowRow.name,
         version: workflowRow.version,
-        steps: JSON.parse(workflowRow.steps)
+        start: workflowRow.start,
+        steps: JSON.parse(workflowRow.steps),
+        globals: workflowRow.globals ? JSON.parse(workflowRow.globals) : {}
       };
       
       await this.ctx.storage.put('workflow', workflow);
@@ -50,68 +93,76 @@ export class StateMachineInstance extends DurableObject<Env> {
     let stepId = await this.ctx.storage.get<string>('stepId');
 
     if (!stepId) {
-      // Find the step defined as type: 'Start'
-      const steps = workflow.steps;
-      const startStepId = Object.keys(steps).find(key => steps[key].type === 'Start');
-      
-      if (!startStepId) {
-        throw new Error('No Start type step found in workflow');
+      stepId = workflow.start;
+      if (!workflow.steps[stepId]) {
+        throw new Error('Start step not found in workflow');
       }
-      
-      const startDef = steps[startStepId];
-      const transitionLogic = startDef.transition || {};
-      stepId = transitionLogic['NEXT'] || startStepId;
       await this.ctx.storage.put('stepId', stepId);
     }
     
-    const stepDef: StepDefinition = workflow.steps[stepId as string];
-    
+    const step: StepDefinition = workflow.steps[stepId];
+
+    const hydrationState = {
+      steps: stepSession,
+      globals: workflow.globals,
+      env: this.env
+    };
+
     return { 
       stepId: stepId as string,
-      type: stepDef.type,
-      props: stepDef.props
+      type: step.execution.type,
+      props: hydrateConfig(step.config, hydrationState)
     };
   }
 
   async submitStep(payload: any) {
-    const data = payload;
-    
     const workflow = await this.ctx.storage.get<any>('workflow');
     const stepId = await this.ctx.storage.get<string>('stepId');
     
     if (!workflow || !stepId) throw new Error('State machine not initialized');
+
+    const hydrationState = {
+      steps: await this.ctx.storage.get<any>('stepSession') || {},
+      globals: workflow.globals,
+      env: this.env
+    };
     
     const stepDef = workflow.steps[stepId];
     if (!stepDef) throw new Error('Step not found in workflow definition');
     
-    const transitionLogic = stepDef.transition || {};
-    const availableActions = Object.keys(transitionLogic);
+    hydrationState.steps[stepId] = payload;
+    await this.ctx.storage.put('stepSession', hydrationState.steps);
 
-    if (workflow.id) { // trigger_workflow_name is now abstracted, assuming we just pass it to processor
+    const transitions = stepDef.transitions || [];
+
+    if (workflow.id) {
       await this.env.STEP_PROCESSOR.create({
         id: `${stepId}-${Date.now()}`,
-        params: { stepId: stepId, action: availableActions[0] || 'FINISH', data: data }
+        params: { stepId: stepId, action: 'SUBMIT', data: payload }
       });
     }
 
-    if (availableActions.length === 0) {
+    if (transitions.length === 0) {
       await this.ctx.storage.deleteAll();
       return { finished: true };
     }
 
-    // Automatically pick the first available action for transition
-    const action = availableActions[0];
-    const nextStepId = transitionLogic[action];
+    for (const transition of transitions) {
+      if (jsonLogic.apply(transition.condition, hydrationState)) {
+        const nextStepId = transition.next;
+        const nextStep: StepDefinition = workflow.steps[nextStepId];
 
-    await this.ctx.storage.put('stepId', nextStepId);
-    
-    const nextStepDef: StepDefinition = workflow.steps[nextStepId];
-    
-    return { 
-      stepId: nextStepId,
-      type: nextStepDef.type,
-      props: nextStepDef.props
-    };
+        await this.ctx.storage.put('stepId', nextStepId);
+        
+        return { 
+          stepId: nextStepId,
+          type: nextStep.execution.type,
+          props: hydrateConfig(nextStep.config, hydrationState)
+        };
+      }
+    }
+
+    throw new Error('No valid transition found for the current step');
   }
 
   async rejectStep(_payload: any) {

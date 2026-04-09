@@ -21,10 +21,10 @@ interface PilotConnectionProps {
 
 export function PilotConnection({ onSessionId, onStatusChange, onTimeTick, onTimeReset }: PilotConnectionProps) {
   const stepLibrary: AeroStreamLibrary<React.ReactNode> = {
-    WelcomeComponent,
-    VideoComponent,
-    KYCComponent,
-    DoneComponent,
+    WelcomeComponent: (props: any) => <WelcomeComponent {...props} />,
+    VideoComponent: (props: any) => <VideoComponent {...props} />,
+    KYCComponent: (props: any) => <KYCComponent {...props} />,
+    DoneComponent: (props: any) => <DoneComponent {...props} />,
   };
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -88,7 +88,6 @@ export function PilotConnection({ onSessionId, onStatusChange, onTimeTick, onTim
       pilotRef.current = null;
     }
 
-    setCurrentComponent(null);
     setStatus(ConnectionStatus.closed);
     onSessionId(null);
   };
@@ -102,16 +101,14 @@ export function PilotConnection({ onSessionId, onStatusChange, onTimeTick, onTim
   }, []);
 
   return (
-    <div style={{ marginTop: 20 }}>
-      <h3 style={{ marginTop: 0 }}>Pilot Flow:</h3>
-      
+    <div style={{ height: '100%', width: '100%', display: 'flex', flexDirection: 'column', padding: '1rem', boxSizing: 'border-box' }}>      
       <div style={{ 
         width: '100%', 
-        aspectRatio: '16/9', 
-        backgroundColor: '#f9fafb', 
+        flex: 1, 
+        backgroundColor: '#ebeced', 
         border: '1px solid #e5e7eb', 
-        borderRadius: '8px', 
-        overflowY: 'auto',
+        borderRadius: '1rem', 
+        overflow: 'hidden',
         display: 'flex',
         flexDirection: 'column'
       }}>
@@ -122,18 +119,18 @@ export function PilotConnection({ onSessionId, onStatusChange, onTimeTick, onTim
         )}
       </div>
 
-      <div style={{ display: 'flex', gap: '10px', marginTop: 15 }}>
+      <div style={{ display: 'flex', gap: '1rem', marginTop: '1rem' }}>
         <button 
           onClick={() => { void handleConnect(); }} 
           disabled={status === ConnectionStatus.active} 
-          style={{ padding: '8px 16px', cursor: 'pointer', flex: 1 }}
+          style={{ padding: '0.75rem 1.5rem', cursor: status === ConnectionStatus.active ? 'not-allowed' : 'pointer', flex: 1, backgroundColor: status === ConnectionStatus.active ? '#d1d5db' : '#2563eb', color: '#fff', border: 'none', borderRadius: '0.5rem', fontWeight: 500, fontSize: '1rem', transition: 'background-color 0.2s' }}
         >
           Connect
         </button>
         <button 
           onClick={() => { handleDisconnect(); }} 
           disabled={status === ConnectionStatus.closed} 
-          style={{ padding: '8px 16px', cursor: 'pointer', flex: 1 }}
+          style={{ padding: '0.75rem 1.5rem', cursor: status === ConnectionStatus.closed ? 'not-allowed' : 'pointer', flex: 1, backgroundColor: status === ConnectionStatus.closed ? '#d1d5db' : '#ef4444', color: '#fff', border: 'none', borderRadius: '0.5rem', fontWeight: 500, fontSize: '1rem', transition: 'background-color 0.2s' }}
         >
           Disconnect
         </button>

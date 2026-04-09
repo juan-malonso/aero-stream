@@ -11,8 +11,8 @@ interface VideoHistoryProps {
 
 export function VideoHistory({ history, currentSessionId, status, onViewVideo }: VideoHistoryProps) {
   return (
-    <div>
-      <h3 style={{ marginTop: 0 }}>History</h3>
+    <div style={{ marginBottom: 15, fontWeight: 'bold', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+      <h3 style={{ marginBottom: 5 }}>History</h3>
       <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
         {history.length === 0 && <li style={{ color: '#000', fontSize: '14px' }}>No videos yet...</li>}
         {history.map((video) => (

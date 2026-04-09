@@ -43,7 +43,7 @@ export function PerformanceStats({ status, connectionTime }: { status: Connectio
 
   return (
     <div style={{ marginBottom: 15, fontWeight: 'bold', display: 'flex', flexDirection: 'column', gap: '8px' }}>
-      <span style={{ color: status === ConnectionStatus.active ? 'green' : status === ConnectionStatus.error ? 'orange' : 'gray' }}>Status: {status}</span>
+      <h3 style={{ marginBottom: 5 }}> Status: <span style={{ color: status === ConnectionStatus.active ? 'green' : status === ConnectionStatus.error ? 'orange' : 'gray' }}>{status}</span></h3>
       <span style={{ fontSize: '0.9em', color: '#444' }}>Time: {formatTime(connectionTime)}</span>
       <span style={{ fontSize: '0.9em', color: '#444' }}>FPS: {fps}</span>
       <span style={{ fontSize: '0.9em', color: '#444' }}>Mem: {memoryUsage}</span>

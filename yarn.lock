@@ -2640,6 +2640,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@types/dlv@npm:^1":
+  version: 1.1.5
+  resolution: "@types/dlv@npm:1.1.5"
+  checksum: 10c0/db63a4a61d2cab12ef5df5b638158a5d973aedb7c46506a910f69ea280f563a4954e7a4b9f112e2adb251d139e7b353ec4897b1e9649768302ed97156517b828
+  languageName: node
+  linkType: hard
+
 "@types/esrecurse@npm:^4.3.1":
   version: 4.3.1
   resolution: "@types/esrecurse@npm:4.3.1"
@@ -2651,6 +2658,13 @@ __metadata:
   version: 1.0.8
   resolution: "@types/estree@npm:1.0.8"
   checksum: 10c0/39d34d1afaa338ab9763f37ad6066e3f349444f9052b9676a7cc0252ef9485a41c6d81c9c4e0d26e9077993354edf25efc853f3224dd4b447175ef62bdcc86a5
+  languageName: node
+  linkType: hard
+
+"@types/json-logic-js@npm:^2":
+  version: 2.0.8
+  resolution: "@types/json-logic-js@npm:2.0.8"
+  checksum: 10c0/b1fc0b39242b8f1f939c86f47bfda213e1eb57686ee4dfbe11057df88fad0dbe0abc3582b72429975e8fb07b0267959d98341e5079ba945345931973538d2f43
   languageName: node
   linkType: hard
 
@@ -2984,14 +2998,14 @@ __metadata:
 
 "aero-stream-pilot@file:../aero-stream-pilot::locator=aero-stream-pilot-example%40workspace%3Aapps%2Faero-stream-pilot-example":
   version: 1.0.0
-  resolution: "aero-stream-pilot@file:../aero-stream-pilot#../aero-stream-pilot::hash=f97c9f&locator=aero-stream-pilot-example%40workspace%3Aapps%2Faero-stream-pilot-example"
+  resolution: "aero-stream-pilot@file:../aero-stream-pilot#../aero-stream-pilot::hash=acaa0e&locator=aero-stream-pilot-example%40workspace%3Aapps%2Faero-stream-pilot-example"
   dependencies:
     tweetnacl: "npm:^1.0.3"
     uuid: "npm:^9.0.1"
   peerDependencies:
     react: "*"
     react-dom: "*"
-  checksum: 10c0/d3a6daa4def1bee99a5f065205dc22fdba86f68f5923822fa3360118b3246ff26e5f9989583872ebda5262d773e1173a5cdafae6a4610a18eaf50ba79863bd6c
+  checksum: 10c0/bac1ea76ce68d20ad33c28bf2bd5490842bd11b780113645726012704c16cfce05754b94ac9b1243802945d2872bb3a9d399b6e056347fdb07fa8d4121d68eb7
   languageName: node
   linkType: hard
 
@@ -3028,13 +3042,17 @@ __metadata:
     "@cloudflare/workers-types": "npm:4.20260405.1"
     "@eslint/eslintrc": "npm:3.3.5"
     "@eslint/js": "npm:10.0.1"
+    "@types/dlv": "npm:^1"
+    "@types/json-logic-js": "npm:^2"
     "@types/node": "npm:25.5.2"
     "@types/uuid": "npm:11.0.0"
+    dlv: "npm:1.1.3"
     eslint: "npm:10.2.0"
     eslint-config-prettier: "npm:10.1.8"
     eslint-plugin-import: "npm:2.32.0"
     eslint-plugin-simple-import-sort: "npm:12.1.1"
     hono: "npm:4.12.10"
+    json-logic-js: "npm:2.0.5"
     tweetnacl: "npm:1.0.3"
     typescript: "npm:6.0.2"
     typescript-eslint: "npm:8.58.0"
@@ -3579,6 +3597,13 @@ __metadata:
   dependencies:
     path-type: "npm:^4.0.0"
   checksum: 10c0/dcac00920a4d503e38bb64001acb19df4efc14536ada475725e12f52c16777afdee4db827f55f13a908ee7efc0cb282e2e3dbaeeb98c0993dd93d1802d3bf00c
+  languageName: node
+  linkType: hard
+
+"dlv@npm:1.1.3":
+  version: 1.1.3
+  resolution: "dlv@npm:1.1.3"
+  checksum: 10c0/03eb4e769f19a027fd5b43b59e8a05e3fd2100ac239ebb0bf9a745de35d449e2f25cfaf3aa3934664551d72856f4ae8b7822016ce5c42c2d27c18ae79429ec42
   languageName: node
   linkType: hard
 
@@ -5043,6 +5068,13 @@ __metadata:
   version: 3.0.1
   resolution: "json-buffer@npm:3.0.1"
   checksum: 10c0/0d1c91569d9588e7eef2b49b59851f297f3ab93c7b35c7c221e288099322be6b562767d11e4821da500f3219542b9afd2e54c5dc573107c1126ed1080f8e96d7
+  languageName: node
+  linkType: hard
+
+"json-logic-js@npm:2.0.5":
+  version: 2.0.5
+  resolution: "json-logic-js@npm:2.0.5"
+  checksum: 10c0/c80d96a9f704dac2f4488c7119d9c94cbf67adbd93cb47eaa5b7eadc4947f18ed6d62fd5555f245cc2f87525f9e8d7bd5f70bd9e7fba2c70366e63bd68010f23
   languageName: node
   linkType: hard
 

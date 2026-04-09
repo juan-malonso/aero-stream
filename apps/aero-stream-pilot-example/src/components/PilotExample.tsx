@@ -25,35 +25,39 @@ export function PilotExample() {
   }, []);
 
   return (
-    <div style={{ fontFamily: 'sans-serif', padding: 20, maxWidth: 1400, margin: '0 auto', display: 'flex', gap: '30px' }}>
-      <section style={{ flex: 2, minWidth: 0 }}>
-        <h2 style={{ marginTop: 0 }}>AeroStream Pilot - Next.js Frontend</h2>
-        
-        {/* Core Implementation Example */}
-        <PilotConnection 
-          onSessionId={handleSessionId}
-          onStatusChange={setStatus}
-          onTimeTick={() => { setConnectionTime((prev) => prev + 1); }}
-          onTimeReset={() => { setConnectionTime(0); }}
-        />
+      <div style={{ height: '100vh', width: '100%', padding: '30px', boxSizing: 'border-box', fontFamily: 'sans-serif', display: 'flex', gap: '30px' }}>
+        <section style={{ height: '100%', flex: 2, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+          <h2 style={{ margin: 0, paddingBottom: '15px' }}>AeroStream Example</h2>
+          
+          {/* Core Implementation Example */}
+          <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+            <PilotConnection 
+              onSessionId={handleSessionId}
+              onStatusChange={setStatus}
+              onTimeTick={() => { setConnectionTime((prev) => prev + 1); }}
+              onTimeReset={() => { setConnectionTime(0); }}
+            />
+          </div>
 
-        {viewingId && (
-          <LiveViewer viewingId={viewingId} onClose={() => { setViewingId(null); }} />
-        )}
-      </section>
+          {viewingId && (
+            <LiveViewer viewingId={viewingId} onClose={() => { setViewingId(null); }} />
+          )}
+        </section>
 
-      {/* Developer Diagnostic Tools */}
-      <aside style={{ width: '250px', borderLeft: '1px solid #ddd', paddingLeft: '20px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
-        <PerformanceStats status={status} connectionTime={connectionTime} />
-        <VideoHistory 
-          history={videoHistory} 
-          currentSessionId={sessionId} 
-          status={status} 
-          onViewVideo={(id) => {
-            setViewingId(id);
-          }} 
-        />
-      </aside>
-    </div>
+        <hr />
+
+        {/* Developer Diagnostic Tools */}
+        <aside style={{ width: '250px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          <PerformanceStats status={status} connectionTime={connectionTime} />
+          <VideoHistory 
+            history={videoHistory} 
+            currentSessionId={sessionId} 
+            status={status} 
+            onViewVideo={(id) => {
+              setViewingId(id);
+            }} 
+          />
+        </aside>
+      </div>
   );
 }
