@@ -38,17 +38,14 @@ export function PilotExample() {
               onTimeReset={() => { setConnectionTime(0); }}
             />
           </div>
-
-          {viewingId && (
-            <LiveViewer viewingId={viewingId} onClose={() => { setViewingId(null); }} />
-          )}
         </section>
 
         <hr />
 
         {/* Developer Diagnostic Tools */}
-        <aside style={{ width: '250px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <aside style={{ width: '350px', height: '100%', display: 'flex', flexDirection: 'column', gap: '40px' }}>
           <PerformanceStats status={status} connectionTime={connectionTime} />
+          <LiveViewer viewingId={viewingId} onClose={() => { setViewingId(null); }} />
           <VideoHistory 
             history={videoHistory} 
             currentSessionId={sessionId} 

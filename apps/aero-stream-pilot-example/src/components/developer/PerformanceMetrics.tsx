@@ -42,7 +42,7 @@ export function PerformanceStats({ status, connectionTime }: { status: Connectio
   const formatTime = (seconds: number) => `${Math.floor(seconds / 60).toString().padStart(2, '0')}:${(seconds % 60).toString().padStart(2, '0')}`;
 
   return (
-    <div style={{ marginBottom: 15, fontWeight: 'bold', display: 'flex', flexDirection: 'column', gap: '8px' }}>
+    <div style={{ fontWeight: 'bold', display: 'flex', flexDirection: 'column', gap: '8px' }}>
       <h3 style={{ marginBottom: 5 }}> Status: <span style={{ color: status === ConnectionStatus.active ? 'green' : status === ConnectionStatus.error ? 'orange' : 'gray' }}>{status}</span></h3>
       <span style={{ fontSize: '0.9em', color: '#444' }}>Time: {formatTime(connectionTime)}</span>
       <span style={{ fontSize: '0.9em', color: '#444' }}>FPS: {fps}</span>

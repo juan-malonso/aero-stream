@@ -2,12 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react';
 
-export function LiveViewer({ viewingId, onClose }: { viewingId: string; onClose: () => void }) {
+export function LiveViewer({ viewingId, onClose }: { viewingId: string | null; onClose: () => void }) {
   const viewerVideoRef = useRef<HTMLVideoElement>(null);
   const [vttUrl, setVttUrl] = useState('');
 
   useEffect(() => {
-    if (!viewerVideoRef.current) return;
+    if (!viewingId || !viewerVideoRef.current) return;
 
     setVttUrl('');
     fetch(`http://localhost:8787/resources/${viewingId}/video/signature.vtt`)
@@ -125,23 +125,23 @@ export function LiveViewer({ viewingId, onClose }: { viewingId: string; onClose:
   }, [viewingId]);
 
   return (
-    <div style={{ marginTop: 20 }}>
-      <h3 style={{ marginTop: 0 }}>Live Viewer: {viewingId.split('-')[0]}</h3>
-      <video 
-        ref={viewerVideoRef} 
-        autoPlay 
-        controls
-        crossOrigin="anonymous"
-        style={{ width: '100%', background: '#000', borderRadius: '8px', border: '2px solid #4CAF50' }} 
-      >
-        {vttUrl && <track default kind="subtitles" srcLang="es" label="Firma" src={vttUrl} />}
-      </video>
-      <button 
-        onClick={onClose} 
-        style={{ marginTop: 10, padding: '8px 16px', cursor: 'pointer', background: '#f44336', color: 'white', border: 'none', borderRadius: '4px' }}
-      >
-        Close Viewer
-      </button>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem',}}>
+      <div style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 5}}>
+        <h3 style={{ margin: 0, fontSize: '1.125rem', color: '#1f2937' }}>Live Viewer: </h3>
+        <div style={{ fontSize: '0.8rem', color: '#6b7280' }}>{viewingId?.split('-')[0]}</div>
+      </div>
+
+      <div style={{ width: '100%', margin: '0 auto', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+        <video 
+          ref={viewerVideoRef} 
+          autoPlay 
+          controls
+          crossOrigin="anonymous"
+          style={{ width: '100%', aspectRatio: '4/3', background: '#000', borderRadius: '8px' }} 
+        >
+          {vttUrl && <track default kind="subtitles" srcLang="es" label="Firma" src={vttUrl} />}
+        </video>
+      </div>
     </div>
   );
 }
