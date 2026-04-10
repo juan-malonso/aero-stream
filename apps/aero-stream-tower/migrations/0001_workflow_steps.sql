@@ -15,6 +15,44 @@ INSERT INTO workflows (id, name, version, start, steps, globals) VALUES (
   'default-workflow-id', 
   'Default Workflow', 
   1,
+  '33333333-3333-3333-3333-333333333333',
+  '{
+    "33333333-3333-3333-3333-333333333333": {
+      "execution": {
+        "mode": "FRONT",
+        "type": "VideoComponent"
+      },
+      "name": "SecondVideoComponent",
+      "config": {
+        "title": "Sonrrie de nuevo a la camara!",
+        "subtitle": "Por favor, mira a la cámara."
+      },
+      "transitions": [
+        {
+          "condition": true,
+          "next": "44444444-4444-4444-4444-444444444444"
+        }
+      ]
+    },
+    "44444444-4444-4444-4444-444444444444": {
+      "execution": {
+        "mode": "FRONT",
+        "type": "DoneComponent"
+      },
+      "name": "DoneComponent",
+      "config": {
+        "title": "¡Verificación Completada!",
+        "message": "Gracias. Tu identidad ha sido validada."
+      },
+      "transitions": []
+    }
+  }',
+  '{}'
+), 
+(
+  '0002-workflow-id', 
+  'Default Workflow', 
+  1,
   '00000000-0000-0000-0000-000000000000',
   '{
     "00000000-0000-0000-0000-000000000000": {

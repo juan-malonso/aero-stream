@@ -4,7 +4,7 @@ import { ConnectionStatus } from '@/constants';
 
 import { DoneComponent, KYCComponent, VideoComponent, WelcomeComponent } from '../steps';
 
-import { type AeroStreamLibrary, AeroStreamPilot } from 'aero-stream-pilot';
+import { type AeroStreamComponentParams, type AeroStreamLibrary, AeroStreamPilot } from 'aero-stream-pilot';
 import { useEffect, useRef, useState } from 'react';
 
 
@@ -21,10 +21,10 @@ interface PilotConnectionProps {
 
 export function PilotConnection({ onSessionId, onStatusChange, onTimeTick, onTimeReset }: PilotConnectionProps) {
   const stepLibrary: AeroStreamLibrary<React.ReactNode> = {
-    WelcomeComponent: (props: any) => <WelcomeComponent {...props} />,
-    VideoComponent: (props: any) => <VideoComponent {...props} />,
-    KYCComponent: (props: any) => <KYCComponent {...props} />,
-    DoneComponent: (props: any) => <DoneComponent {...props} />,
+    WelcomeComponent: (props: AeroStreamComponentParams) => <WelcomeComponent {...props} />,
+    VideoComponent: (props: AeroStreamComponentParams) => <VideoComponent {...props} />,
+    KYCComponent: (props: AeroStreamComponentParams) => <KYCComponent {...props} />,
+    DoneComponent: (props: AeroStreamComponentParams) => <DoneComponent {...props} />,
   };
 
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -43,7 +43,14 @@ export function PilotConnection({ onSessionId, onStatusChange, onTimeTick, onTim
     try {
       onSessionId(null);
 
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      const stream = await navigator.mediaDevices.getUserMedia({ 
+        video:{
+          width: { ideal: 1280 },
+          height: { ideal: 720 },
+          frameRate: { ideal: 30, max: 30 }
+        }, 
+        audio: true,  
+      });
 
       pilotRef.current = new AeroStreamPilot<React.ReactNode>({
         url: socketUrl,
@@ -103,6 +110,7 @@ export function PilotConnection({ onSessionId, onStatusChange, onTimeTick, onTim
   return (
     <div style={{ height: '100%', width: '100%', display: 'flex', flexDirection: 'column', padding: '1rem', boxSizing: 'border-box' }}>      
       <div style={{ 
+        position: 'relative',
         width: '100%', 
         flex: 1, 
         backgroundColor: '#ebeced', 
@@ -112,6 +120,7 @@ export function PilotConnection({ onSessionId, onStatusChange, onTimeTick, onTim
         display: 'flex',
         flexDirection: 'column'
       }}>
+
         {currentComponent ?? (
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: '#9ca3af' }}>
             Flow disconnected. Click Connect to start.

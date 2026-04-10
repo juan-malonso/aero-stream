@@ -5,6 +5,7 @@ import { type PipeMessages, PipeMessageType } from './model.js';
 
 export { 
     StepComponent as AeroStreamComponent,
+    StepComponentParams as AeroStreamComponentParams,
     StepLibrary as AeroStreamLibrary
 } from './workflow/workflow.js';
 
@@ -81,5 +82,9 @@ export class AeroStreamPilot<TComponent = unknown> {
 
     public stream(): MediaStream {
         return this.#video.getLiveStream();
+    }
+
+    public canvas(): HTMLCanvasElement {
+        return this.#video.getLiveCanvas();
     }
 }

@@ -1,7 +1,7 @@
 import { Logger } from "../../utils/logger.js";
 import { PipeMessageType, type StepRenderMessage } from "../model.js";
 import type { AeroStreamPipe } from "../pipe/pipe.js";
-import { AeroStreamVideo } from "../video/video.js";
+import type { AeroStreamVideo } from "../video/video.js";
 
 export interface StepState {
     stepId: string;
@@ -15,6 +15,7 @@ export type StepRejectFn = (data?: unknown) => void;
 export interface StepComponentParams {
     data: unknown;
     stream: () => MediaStream;
+    canvas: () => HTMLCanvasElement;
     submit: StepSubmitFn;
     reject: StepRejectFn;
 }
@@ -59,7 +60,7 @@ export class AeroStreamWorkflow<TComponent = unknown> {
         
         if (!Object.hasOwn(this.library, this.state.type)) {
             console.error(`Component ${this.state.type} [${this.state.stepId}] not found in library`);
-            return null;
+            return;
         }
 
         const renderFn = this.library[this.state.type];
@@ -68,6 +69,7 @@ export class AeroStreamWorkflow<TComponent = unknown> {
             renderFn({
                 data: this.state.props,
                 stream: () => this.#video.getLiveStream(),
+                canvas: () => this.#video.getLiveCanvas(),
                 submit: (data) => { this.commit(PipeMessageType.stepSubmit, data); },
                 reject: (data) => { this.commit(PipeMessageType.stepReject, data); }
             })
