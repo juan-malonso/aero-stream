@@ -49,3 +49,5 @@ Thumbs.db
 
 # Debug files
 hs_err_pid*
+
+*.lock

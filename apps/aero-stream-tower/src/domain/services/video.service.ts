@@ -39,7 +39,6 @@ export class VideoService {
   async uploadPart(clientPartNumber: number, chunkData: Uint8Array): Promise<void> {
     if (!this._isUploading) throw new Error('Stream not initialized or already completed');
     
-    // Store the segment directly in its native WebM format
     const segmentName = `segment_${String(clientPartNumber)}.webm`;
     const key = `${this.sessionId}/video/${segmentName}`;
 
