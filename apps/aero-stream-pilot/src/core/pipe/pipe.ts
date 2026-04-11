@@ -1,6 +1,6 @@
 import { Logger } from '../../utils/logger.js';
 
-import initWasm, { SecurePipeCore } from 'aero-stream-pilot-core';
+import initWasm, { SecurePipeCore, SecureVideoCore } from 'aero-stream-pilot-core';
 
 export interface AeroStreamPipeOptions {
     url: string;
@@ -22,7 +22,8 @@ export class AeroStreamPipe {
     private _close: () => void;
     
     private cryptoCore: SecurePipeCore;
-    private corePromise: Promise<SecurePipeCore>;
+    private videoCore: SecureVideoCore;
+    private corePromise: Promise<[SecurePipeCore, SecureVideoCore]>;
 
 
     constructor({ url, secret, workflowId, onMessage, onClose }: AeroStreamPipeOptions) {
@@ -34,19 +35,23 @@ export class AeroStreamPipe {
         this._handler = onMessage;
         this._close = onClose;
 
-        this.cryptoCore = {} as SecurePipeCore;
+        this.cryptoCore = null as unknown as SecurePipeCore;
+        this.videoCore = null as unknown as SecureVideoCore;
         this.corePromise = this.initCore(secret);
     }
 
-    public async initCore(secret: string) {
+    public async initCore(secret: string): Promise<[SecurePipeCore, SecureVideoCore]> {
         await initWasm();
-        return new SecurePipeCore(secret);
+        const pipe = new SecurePipeCore(secret);
+        const video = new SecureVideoCore(pipe, 8192);
+
+        return [pipe, video];
     }
 
     public async connect(): Promise<boolean> {
         this.logger.debug(`Connecting to Aero-Stream Tower`, { url: this.url });
         
-        this.cryptoCore = await this.corePromise;
+        [this.cryptoCore, this.videoCore] = await this.corePromise;
 
         return await new Promise((resolve, reject) => {
             try {
@@ -118,8 +123,35 @@ export class AeroStreamPipe {
         }
     }
 
+    public async chunk(blob: Blob) {
+        if (!this.isConnected || !this.ws) {
+            this.logger.error('Cannot send message, not connected.');
+            return;
+        }
+        
+        try {
+            const arrayBuffer = await blob.arrayBuffer();
+            const data = new Uint8Array(arrayBuffer);
+
+            const message: string | undefined = this.videoCore.process_video_chunk(data);
+            if (message) {
+                this.ws.send(message);
+            }
+        } catch (error) {
+            this.logger.error('Wasm processing/encryption failed', { error });
+        }
+    }
+
+    public chunkEnd() {
+        if (this.ws) {
+            const message = this.videoCore.close();
+            if (message)this.ws.send(message);
+        }
+    }
+
     public close() {
         if (this.ws) {
+            this.chunkEnd();
             this.ws.close();
         }
 

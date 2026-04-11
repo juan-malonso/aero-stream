@@ -2,7 +2,12 @@ use wasm_bindgen::prelude::*;
 use crypto_box::{SalsaBox as CryptoBox, PublicKey, SecretKey};
 use xsalsa20poly1305::{XSalsa20Poly1305, KeyInit, aead::{Aead, AeadCore, OsRng}};
 use serde::{Deserialize, Serialize};
+use base64::{Engine as _, engine::general_purpose::STANDARD};
 use js_sys::JSON;
+
+
+// ========================================================= SECURE PIPE CORE ==
+// -- Struct ----------------------------------------------------------- PIPE --
 
 #[derive(Serialize, Deserialize)]
 struct WirePayload {
@@ -31,6 +36,8 @@ pub struct SecurePipeCore {
     tower_public: Option<PublicKey>,
     is_connected: bool,
 }
+
+// -- Impl ------------------------------------------------------------- PIPE --
 
 #[wasm_bindgen]
 impl SecurePipeCore {
@@ -136,3 +143,71 @@ impl SecurePipeCore {
         }
     }
 }
+
+// == SECURE PIPE CORE =========================================================
+
+
+// ======================================================== SECURE VIDEO CORE ==
+// -- Struct ---------------------------------------------------------- VIDEO --
+
+#[wasm_bindgen]
+pub struct SecureVideoCore {
+    pipe: SecurePipeCore,
+    chunk_counter: u32,
+    internal_buffer: Vec<u8>,
+    max_chunk_size: usize,
+}
+
+// -- Impl ------------------------------------------------------------ VIDEO --
+
+#[wasm_bindgen]
+impl SecureVideoCore {
+    #[wasm_bindgen(constructor)]
+    pub fn new(pipe: SecurePipeCore, max_chunk_size: usize) -> Self {
+        Self {
+            pipe,
+            chunk_counter: 1,
+            internal_buffer: Vec::new(),
+            max_chunk_size,
+        }
+    }
+
+    #[wasm_bindgen]
+    pub fn process_video_chunk(&mut self, data: &[u8]) -> Result<Option<String>, JsValue> {
+        self.internal_buffer.extend_from_slice(data);
+
+        if self.internal_buffer.len() >= self.max_chunk_size {
+            return self.flush();
+        }
+        
+        Ok(None)
+    }
+
+    #[wasm_bindgen]
+    pub fn flush(&mut self) -> Result<Option<String>, JsValue> {
+        if self.internal_buffer.is_empty() {
+            return Ok(None);
+        }
+
+        let mut packet = Vec::with_capacity(4 + self.internal_buffer.len());
+        packet.extend_from_slice(&self.chunk_counter.to_le_bytes());
+        packet.extend_from_slice(&self.internal_buffer);
+
+        let b64_chunk = STANDARD.encode(&packet);
+        let video_message = format!(r#"{{"type":"VIDEO","chunk":"{}"}}"#, b64_chunk);
+
+        let encrypted_payload = self.pipe.encrypt_outgoing_message(&video_message)?;
+
+        self.internal_buffer.clear();
+        self.chunk_counter += 1;
+
+        Ok(Some(encrypted_payload))
+    }
+
+    #[wasm_bindgen]
+    pub fn close(&mut self) -> Result<Option<String>, JsValue> {
+        self.flush()
+    }
+}
+
+// == SECURE VIDEO CORE ========================================================

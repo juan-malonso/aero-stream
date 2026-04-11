@@ -21,6 +21,9 @@ crypto_box = { version = "0.9.1", features = ["serde"] }
 crypto_secretbox = "0.1.1" 
 xsalsa20poly1305 = "0.9.1"
 
+# Encoding
+base64 = "0.22.1"
+
 # Randomness
 rand_core = "0.10.0"
 getrandom = { version = "0.2", features = ["js"] }
