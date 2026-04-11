@@ -15,7 +15,6 @@ interface Category { categoryName: string; score: number }
 interface BoundingBox { originX: number; originY: number; width: number; height: number }
 interface Detection { boundingBox?: BoundingBox; categories: Category[] }
 
-// Lista maestra de objetos permitidos
 const ALLOWED_OBJECTS = [
     "cell phone", 
     "book", 
@@ -140,7 +139,6 @@ export class AeroStreamVideo {
         }
     }
 
-    // --- NUEVO LOOP REFATORIZADO (Baja complejidad) ---
     private trackingLoop = () => {
         this.animationFrameId = requestAnimationFrame(this.trackingLoop);
         if (!this.areDetectorsReady()) return;
@@ -162,11 +160,10 @@ export class AeroStreamVideo {
 
     private processCurrentFrame(timestamp: number) {
         const currentTime = this.hiddenVideoEl.currentTime;
-        if (currentTime === this.lastVideoTime) return; // Early return
+        if (currentTime === this.lastVideoTime) return; 
         
         this.lastVideoTime = currentTime;
         
-        // Extraer datos
         const faceResults = this.faceLandmarker.detectForVideo(this.hiddenVideoEl, timestamp);
         const handResults = this.handLandmarker.detectForVideo(this.hiddenVideoEl, timestamp);
         const objectResults = this.objectDetector.detectForVideo(this.hiddenVideoEl, timestamp);
@@ -177,12 +174,10 @@ export class AeroStreamVideo {
             const h = this.ghostCanvasEl.height;
             ctx.clearRect(0, 0, w, h);
 
-            // Dibujar delegando a funciones pequeñas
             this.drawFaces(ctx, faceResults.faceLandmarks, w, h);
             this.drawHands(ctx, handResults.landmarks, w, h);
             this.drawObjects(ctx, objectResults.detections);
             
-            // Emitir evento
             this.emit('liveTrackingData', {
                 faces: faceResults.faceLandmarks,
                 hands: handResults.landmarks,

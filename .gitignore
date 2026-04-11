@@ -13,6 +13,8 @@ build
 .task
 .next
 coverage
+pkg
+target
 
 # Logs
 logs

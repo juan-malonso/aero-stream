@@ -1,6 +1,6 @@
 import { Logger } from '../../utils/logger.js';
 
-import nacl from 'tweetnacl';
+import initWasm, { SecurePipeCore } from 'aero-stream-pilot-core';
 
 export interface AeroStreamPipeOptions {
     url: string;
@@ -13,45 +13,45 @@ export interface AeroStreamPipeOptions {
 export class AeroStreamPipe {
     private logger = new Logger(AeroStreamPipe.name);
 
-    // connection
     private url: URL;
     private workflowId: string;
+    private ws: WebSocket | null = null;
+    public isConnected = false;
+
     private _handler: (message: unknown) => void;
     private _close: () => void;
+    
+    private cryptoCore: SecurePipeCore;
+    private corePromise: Promise<SecurePipeCore>;
 
-    // communication 
-    public isConnected = false;
-    private ws: WebSocket | null = null;
-    private pilotKey: nacl.BoxKeyPair;
-    private towerKey: Uint8Array | null = null;
-    private secretKey: Uint8Array = new Uint8Array(32);
 
     constructor({ url, secret, workflowId, onMessage, onClose }: AeroStreamPipeOptions) {
-        // connection url
         this.url = new URL(url);
         if (this.url.protocol === 'http:') this.url.protocol = 'ws:';
         if (this.url.protocol === 'https:') this.url.protocol = 'wss:';
 
         this.workflowId = workflowId;
-
-        // connection params and handlers
-        this.secretKey.set(new TextEncoder().encode(secret).slice(0, 32));
         this._handler = onMessage;
         this._close = onClose;
 
-        // initialize pilot encryption keys
-        this.pilotKey = nacl.box.keyPair();
+        this.cryptoCore = {} as SecurePipeCore;
+        this.corePromise = this.initCore(secret);
     }
 
-    // connect pipe
+    public async initCore(secret: string) {
+        await initWasm();
+        return new SecurePipeCore(secret);
+    }
+
     public async connect(): Promise<boolean> {
         this.logger.debug(`Connecting to Aero-Stream Tower`, { url: this.url });
+        
+        this.cryptoCore = await this.corePromise;
 
         return await new Promise((resolve, reject) => {
             try {
                 this.ws = new WebSocket(this.url.toString(), [this.workflowId]);
                 
-                // set listeners
                 this.ws.addEventListener('open', () => { this._onOpen(); });
                 this.ws.addEventListener('message', (event) => { this._onMessage(event.data, resolve); });
                 this.ws.addEventListener('error', (error) => { this._onError(error, reject); });
@@ -65,23 +65,16 @@ export class AeroStreamPipe {
     }
 
     private _onOpen() {
-        const message = {
-            pilotKey: Array.from(this.pilotKey.publicKey) 
-        };
+        if (!this.ws) {
+            this.logger.error('Cannot send message, not connected.');
+            return;
+        }
 
-        const responseNonce = nacl.randomBytes(nacl.secretbox.nonceLength);
-        const responseEncrypted = nacl.secretbox(
-            new TextEncoder().encode(JSON.stringify(message)), 
-            responseNonce, 
-            this.secretKey
-        );
-
-        const payload = JSON.stringify({ 
-            data: Array.from(responseEncrypted), 
-            nonce: Array.from(responseNonce),
-        });
-
-        this.ws?.send(payload);
+        try {
+            this.ws.send(this.cryptoCore.generate_handshake_request());
+        } catch (error) {
+            this.logger.error('Wasm handshake generation failed', { error });
+        }
     }
 
     private _onMessage(data: unknown, resolve: (value: PromiseLike<boolean> | boolean) => void) {
@@ -91,37 +84,8 @@ export class AeroStreamPipe {
         }
 
         try {
-            const message = JSON.parse(data) as { data: number[], nonce: number[] };
-            
-            const payload = {
-                data: new Uint8Array(message.data),
-                nonce: new Uint8Array(message.nonce)
-            }
-
-            if (this.isConnected) {
-                if (!this.towerKey) {
-                    throw new Error('Received message before tower key was established.');
-                }
-                
-                this._handler(decrypt(payload, this.towerKey, this.pilotKey.secretKey));
-            } else {
-                const decrypted = nacl.secretbox.open(
-                    payload.data, 
-                    payload.nonce, 
-                    this.secretKey
-                );
-                if (!decrypted) {
-                    throw new Error('Handshake decryption failed. Invalid secret key.');
-                }
-
-                const message = JSON.parse(new TextDecoder().decode(decrypted)) as { towerKey: number[], sessionId: string };
-                
-                this.towerKey = new Uint8Array(message.towerKey);
-                this.isConnected = true;
-                
-                this._handler({ sessionId: message.sessionId });
-            }
-
+            this._handler(this.cryptoCore.process_incoming_message(data));
+            this.isConnected = this.cryptoCore.is_connected();
             resolve(true);
         } catch(error) {
             this.logger.warn('Could not decrypt message, passing raw data.', { error: String(error), data });
@@ -142,13 +106,16 @@ export class AeroStreamPipe {
     }
 
     public send(data: object) {
-        if (!this.isConnected || !this.ws || !this.towerKey) {
+        if (!this.isConnected || !this.ws) {
             this.logger.error('Cannot send message, not connected.');
             return;
         }
 
-        const payload = encrypt(data, this.towerKey, this.pilotKey.secretKey);
-        this.ws.send(payload);
+        try {
+            this.ws.send(this.cryptoCore.encrypt_outgoing_message(JSON.stringify(data)));
+        } catch (error) {
+            this.logger.error('Wasm encryption failed', { error });
+        }
     }
 
     public close() {
@@ -157,34 +124,6 @@ export class AeroStreamPipe {
         }
 
         this.isConnected = false;
+        this.cryptoCore.free();
     }
-}
-
-
-function encrypt(data: unknown, publicKey: Uint8Array, secretKey: Uint8Array): string {
-    const message = JSON.stringify(data);
-
-    const nonce = nacl.randomBytes(nacl.box.nonceLength);
-    const encrypted = nacl.box(
-        new TextEncoder().encode(message),
-        nonce,
-        publicKey,
-        secretKey
-    );
-
-    return JSON.stringify({ data: Array.from(encrypted), nonce: Array.from(nonce) });
-}
-
-function decrypt(event: { data: Uint8Array, nonce: Uint8Array }, publicKey: Uint8Array, secretKey: Uint8Array): unknown {
-    const decrypted = nacl.box.open(
-        event.data, 
-        event.nonce, 
-        publicKey, 
-        secretKey
-    );
-    if (!decrypted) {
-        throw new Error('Cannot decrypt message: nacl.box.open returned null.');
-    }
-    
-    return JSON.parse(new TextDecoder().decode(decrypted)) as unknown;
 }

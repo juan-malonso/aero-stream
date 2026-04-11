@@ -1,0 +1,5 @@
+version: '3'
+
+tasks:
+  build:
+    wasm-pack build --target web
